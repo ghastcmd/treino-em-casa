@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b2420">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Treino">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+<title>Treino em Casa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout: a training-log card list; each card pairs a looping stick-figure demo with the dose, one cue and the video link. */
+:root{
+  --bg:#eef1ee; --surface:#ffffff; --ink:#1b2420; --muted:#5b6862; --line:#d7ddd8;
+  --fig:#1f2a25; --fig-far:#a7b2ac; --prop:#d6ddd8; --prop-edge:#bcc5bf; --band:#d8792a; --iron:#3a4640;
+  --stage:#f6f8f6; --mat:#e6ebe7;
+  --seg:#2f6fa8; --ter:#2c8466; --qua:#b25c22; --sex:#6a4fa3; --sab:#a8384a; --rest:#5b6862;
+  --accent:var(--seg);
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#111614; --surface:#18201d; --ink:#e7ede9; --muted:#9aa7a0; --line:#2a3430;
+  --fig:#e4ebe7; --fig-far:#56645d; --prop:#2b3531; --prop-edge:#3a4641; --band:#e8944d; --iron:#c3cdc8;
+  --stage:#141b18; --mat:#1f2824;
+  --seg:#6aa3d8; --ter:#55b893; --qua:#e08a4c; --sex:#a48ad8; --sab:#e06b7c; --rest:#9aa7a0;
+  color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#111614; --surface:#18201d; --ink:#e7ede9; --muted:#9aa7a0; --line:#2a3430;
+  --fig:#e4ebe7; --fig-far:#56645d; --prop:#2b3531; --prop-edge:#3a4641; --band:#e8944d; --iron:#c3cdc8;
+  --stage:#141b18; --mat:#1f2824;
+  --seg:#6aa3d8; --ter:#55b893; --qua:#e08a4c; --sex:#a48ad8; --sab:#e06b7c; --rest:#9aa7a0;
+  color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-direction:column;gap:4px}
+h1{font-family:var(--f-display);font-weight:700;font-size:34px;line-height:1;letter-spacing:.01em;margin:0;text-transform:uppercase}
+.sub{color:var(--muted);margin:0}
+.days{display:flex;gap:6px;flex-wrap:wrap}
+.day{font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.04em;text-transform:uppercase;
+  border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer;
+  display:flex;flex-direction:column;align-items:flex-start;line-height:1.05;min-width:64px}
+.day small{font-family:var(--f-body);font-weight:400;font-size:11px;letter-spacing:0;text-transform:none;color:var(--muted)}
+.day[aria-pressed="true"]{border-color:var(--dc);background:var(--dc);color:#fff}
+.day[aria-pressed="true"] small{color:rgba(255,255,255,.85)}
+.day:focus-visible,.stage:focus-visible,.vid:focus-visible,.done input:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+.dayhead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:3px solid var(--accent);padding-bottom:6px}
+.dayhead h2{font-family:var(--f-display);font-weight:700;font-size:28px;margin:0;text-transform:uppercase;color:var(--accent);letter-spacing:.02em}
+.dayhead p{margin:0;color:var(--muted)}
+.prog{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+section.block{display:flex;flex-direction:column;gap:10px}
+.blockhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.blockhead h3{font-family:var(--f-display);font-weight:600;font-size:19px;letter-spacing:.06em;text-transform:uppercase;margin:0}
+.blockhead span{color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,440px),1fr));gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;display:flex;gap:12px;padding:10px;align-items:flex-start;min-width:0}
+.card.is-done{opacity:.62}
+.stage{flex:0 0 172px;width:172px;align-self:flex-start;aspect-ratio:200/132;background:var(--stage);border-radius:7px;cursor:pointer;position:relative;border:0;padding:0;display:block;max-width:100%}
+.stage svg{width:100%;height:100%;display:block}
+.stage .ps{position:absolute;right:5px;bottom:4px;font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.05em}
+.info{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1}
+.info h4{margin:0;font-size:15.5px;line-height:1.25}
+.dose{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;color:var(--accent)}
+.cue{margin:0;color:var(--muted);font-size:13.5px}
+.tag{align-self:flex-start;font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 6px}
+.row{display:flex;gap:14px;align-items:center;margin-top:auto;flex-wrap:wrap;padding-top:4px}
+.vid{color:var(--ink);font-weight:700;font-size:13px;text-decoration:none;border-bottom:1.5px solid var(--accent)}
+.done{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer}
+.done input{width:17px;height:17px;accent-color:var(--accent);margin:0}
+.rest{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:6px}
+.rest p{margin:0}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:10px}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:13.5px}
+.note h3{margin:0;font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.05em;text-transform:uppercase}
+.note ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.note.stop h3{color:var(--sab)}
+.legend{color:var(--muted);font-size:13px;margin:0}
+.legend b{color:var(--ink)}
+.reset{background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:3px 8px;font:inherit;font-size:12px;cursor:pointer}
+#tracker{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.tr-top{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.stat{display:flex;flex-direction:column;line-height:1.1}
+.stat b{font-family:var(--f-display);font-weight:700;font-size:32px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.today-btn{margin-left:auto;font:inherit;font-weight:700;font-size:14px;border:2px solid var(--ter);background:transparent;color:var(--ink);border-radius:10px;padding:10px 14px;cursor:pointer}
+.today-btn.on{background:var(--ter);color:#fff}
+.today-btn:focus-visible,.c:focus-visible{outline:2.5px solid var(--accent);outline-offset:2px}
+.tr-body{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;width:100%;max-width:290px}
+.wk{font-size:11px;color:var(--muted);text-align:center;font-weight:700}
+.c{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--muted);font:inherit;font-size:11px;font-variant-numeric:tabular-nums;cursor:pointer;padding:0;min-width:0}
+.c.ok{background:var(--ter);border-color:var(--ter);color:#fff;font-weight:700}
+.c.miss{border-color:var(--sab);color:var(--sab)}
+.c.rest{border-style:dashed}
+.c.today{box-shadow:0 0 0 2px var(--ink)}
+.c.fut{opacity:.35;cursor:default}
+.nudge{margin:0;color:var(--sab);font-weight:700}
+.tr-note{margin:0;color:var(--muted);font-size:12.5px;max-width:360px;flex:1;min-width:200px}
+@media (max-width:520px){ .today-btn{margin-left:0;width:100%} }
+/* svg parts */
+.fg{stroke:var(--fig);fill:none;stroke-linecap:round;stroke-linejoin:round}
+.fr{stroke:var(--fig-far);fill:none;stroke-linecap:round;stroke-linejoin:round}
+.hd{fill:var(--fig)}
+.pr{fill:var(--prop);stroke:var(--prop-edge);stroke-width:1}
+.fl{stroke:var(--prop-edge);stroke-width:1.5}
+.mt{fill:var(--mat)}
+.bd{stroke:var(--band);stroke-width:2.2;fill:none;stroke-linecap:round}
+.ir{fill:var(--iron)}
+.irs{stroke:var(--iron);stroke-width:2.4;stroke-linecap:round}
+.lb{fill:var(--muted);font:700 9px var(--f-body);letter-spacing:.06em}
+@media (max-width:520px){
+  .stage{flex-basis:124px;width:124px}
+  .card{gap:10px}
+  h1{font-size:30px}
+  .day{min-width:0;padding:6px 10px}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Treino em Casa</h1>
+    <p class="sub">Halteres, elástico, barra fixa e degrau. Toque numa animação para pausar.</p>
+  </header>
+  <section id="tracker" aria-label="Acompanhamento"></section>
+  <nav class="days" id="days" aria-label="Dia do treino"></nav>
+  <main id="main" style="display:flex;flex-direction:column;gap:22px"></main>
+  <div class="notes">
+    <div class="note">
+      <h3>Como ler as séries</h3>
+      <ul>
+        <li><b>2 + top set</b>: 2 séries de trabalho e 1 última série perto da falha.</li>
+        <li>Séries de trabalho: pare com 1–2 repetições sobrando.</li>
+        <li>Descanso: 2–3 min nos compostos, 1–2 min nos isolados.</li>
+        <li>Descida controlada de 2–3 s em tudo.</li>
+      </ul>
+    </div>
+    <div class="note">
+      <h3>Joelho e ombro esquerdos</h3>
+      <ul>
+        <li>Agachamento só até o degrau, sem dor.</li>
+        <li>Escada: sobe com a direita, desce com a esquerda.</li>
+        <li>Flexões e supinos com cotovelos a uns 45°.</li>
+        <li>Ajoelhar só sobre um colchonete dobrado.</li>
+      </ul>
+    </div>
+    <div class="note stop">
+      <h3>Pare e fale com a fisio se</h3>
+      <ul>
+        <li>A dor no joelho durar até o dia seguinte.</li>
+        <li>O joelho inchar, travar ou falsear.</li>
+        <li>O ombro estalar com dor ou escorregar.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="legend">As animações são ilustrações simplificadas do movimento. Para ver a execução completa, abra o vídeo de cada exercício.</p>
+</div>
+
+<script>
+/* ---------- stick-figure rig ---------- */
+const D2R = Math.PI/180, FLOOR = 122, FL = 119.5;
+const B = {torso:40, neck:6, head:7, ua:22, fa:20, th:28, sh:27, ft:9, ftF:5, sw:12, hw:6};
+const dir = a => [Math.cos(a*D2R), Math.sin(a*D2R)];
+const add = (p,a,l) => { const d = dir(a); return [p[0]+d[0]*l, p[1]+d[1]*l]; };
+const offp = (p,o) => o ? [p[0]+o[0], p[1]+o[1]] : p;
+
+function ik(Bp, T, L1, L2, bend){
+  const dx = T[0]-Bp[0], dy = T[1]-Bp[1];
+  let d = Math.hypot(dx,dy);
+  d = Math.min(Math.max(d, Math.abs(L1-L2)+0.01), L1+L2-0.01);
+  const a = Math.atan2(dy,dx);
+  const c = (L1*L1 + d*d - L2*L2) / (2*L1*d);
+  const a1 = a + bend*Math.acos(Math.max(-1, Math.min(1, c)));
+  const J = [Bp[0]+L1*Math.cos(a1), Bp[1]+L1*Math.sin(a1)];
+  const a2 = Math.atan2(T[1]-J[1], T[0]-J[0]);
+  return {J, E:[J[0]+L2*Math.cos(a2), J[1]+L2*Math.sin(a2)]};
+}
+function limb(base, s, l1, l2, J){
+  const s1 = s.s ? s.s[0] : 1, s2 = s.s ? s.s[1] : 1;
+  if (s.ik !== undefined){
+    let T = typeof s.ik === 'string' ? J[s.ik] : s.ik;
+    T = offp(T, s.off);
+    return ik(base, T, l1*s1, l2*s2, s.b ?? 1);
+  }
+  const j = add(base, s.a[0], l1*s1);
+  return {J:j, E:add(j, s.a[1], l2*s2)};
+}
+function build(P, view){
+  const t = P.t, ts = P.ts ?? 1;
+  let pel, neck;
+  if (P.neck){ neck = P.neck; pel = add(neck, t+180, B.torso*ts); }
+  else { pel = P.p; neck = add(pel, t, B.torso*ts); }
+  const head = add(neck, P.hd ?? t, (B.neck+B.head)*(P.hs ?? 1));
+  const so = P.so || [0,0];
+  let sN = [neck[0]+so[0], neck[1]+so[1]], sF = sN.slice(), hipN = pel, hipF = pel;
+  const front = view === 'front';
+  if (front){ sN = add(sN, t+90, B.sw); sF = add(sF, t-90, B.sw); hipN = add(pel, t+90, B.hw); hipF = add(pel, t-90, B.hw); }
+  const J = {pel, neck, head, sN, sF, hipN, hipF};
+  const ft = front ? B.ftF : B.ft;
+  const LN = limb(hipN, P.lN, B.th, B.sh, J), LF = limb(hipF, P.lF, B.th, B.sh, J);
+  J.kN = LN.J; J.aN = LN.E; J.kF = LF.J; J.aF = LF.E;
+  J.mN = [(hipN[0]+J.kN[0])/2, (hipN[1]+J.kN[1])/2];
+  J.tN = add(J.aN, P.lN.f ?? (front ? 20 : 0), ft);
+  J.tF = add(J.aF, P.lF.f ?? (front ? 160 : 0), ft);
+  const AN = limb(sN, P.aN, B.ua, B.fa, J), AF = limb(sF, P.aF, B.ua, B.fa, J);
+  J.eN = AN.J; J.hN = AN.E; J.eF = AF.J; J.hF = AF.E;
+  if (P.g){
+    let my = -1e9;
+    for (const k of ['pel','neck','sN','sF','hipN','hipF','kN','aN','kF','aF','tN','tF','eN','hN','eF','hF']) my = Math.max(my, J[k][1]+2.6);
+    my = Math.max(my, J.head[1]+B.head);
+    const dy = FLOOR - my;
+    for (const k in J) J[k] = [J[k][0], J[k][1]+dy];
+  }
+  return J;
+}
+function lerp(a, b, u){
+  if (typeof a === 'number') return a + (b-a)*u;
+  if (Array.isArray(a)) return a.map((x,i) => lerp(x, b[i], u));
+  if (a && typeof a === 'object'){ const o = {}; for (const k in a){ if (k[0] === '$') continue; o[k] = (b && k in b) ? lerp(a[k], b[k], u) : a[k]; } return o; }
+  return a;
+}
+function M(base, over){
+  const o = Array.isArray(base) ? base.slice() : {...base};
+  for (const k in over){
+    const v = over[k];
+    o[k] = (v && typeof v === 'object' && !Array.isArray(v) && base[k] && typeof base[k] === 'object' && !Array.isArray(base[k])) ? M(base[k], v) : v;
+  }
+  return o;
+}
+const ref = (J, r) => typeof r === 'string' ? J[r] : (Array.isArray(r) && typeof r[0] === 'string' ? [J[r[0]][0]+r[1], J[r[0]][1]+r[2]] : r);
+const f1 = n => n.toFixed(1);
+const ln = (a,b,cls,w) => `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" class="${cls}" stroke-width="${w}"/>`;
+
+function staticProps(ex){
+  let s = '';
+  const vb = ex.vb || [0,0,200,132];
+  for (const p of ex.props || []){
+    if (p.k === 'mat') s += `<rect x="${vb[0]+12}" y="${vb[1]+8}" width="${vb[2]-24}" height="${vb[3]-16}" rx="8" class="mt"/>`;
+    if (p.k === 'backwall') s += `<rect x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${FLOOR-vb[1]}" class="mt"/>`;
+    if (p.k === 'box') s += `<rect x="${p.x}" y="${p.y}" width="${p.w}" height="${FLOOR-p.y}" rx="1.5" class="pr"/>`;
+    if (p.k === 'wall') s += `<rect x="${p.x}" y="${vb[1]}" width="${p.w||8}" height="${FLOOR-vb[1]}" class="pr"/>`;
+    if (p.k === 'bar') s += `<line x1="${p.x1}" y1="${p.y}" x2="${p.x2}" y2="${p.y}" class="irs" stroke-width="3"/>` +
+        `<line x1="${p.x1}" y1="${p.y}" x2="${p.x1}" y2="${vb[1]}" class="fl"/><line x1="${p.x2}" y1="${p.y}" x2="${p.x2}" y2="${vb[1]}" class="fl"/>`;
+    if (p.k === 'post') s += `<rect x="${p.x-2.5}" y="${p.y}" width="5" height="${FLOOR-p.y}" rx="1.5" class="pr"/>`;
+    if (p.k === 'label') s += `<text x="${vb[0]+vb[2]-8}" y="${vb[1]+14}" text-anchor="end" class="lb">${p.text}</text>`;
+  }
+  if (ex.floor !== false) s += `<line x1="${vb[0]}" y1="${FLOOR+0.75}" x2="${vb[0]+vb[2]}" y2="${FLOOR+0.75}" class="fl"/>`;
+  return s;
+}
+function figure(ex, P){
+  const J = build(P, ex.view);
+  const front = ex.view === 'front';
+  const far = front ? 'fg' : 'fr';
+  let s = '';
+  for (const p of ex.props || []) if (p.k === 'band' && p.under) s += bandSvg(J, p);
+  // far limbs
+  s += ln(J.hipF, J.kF, far, 5.2) + ln(J.kF, J.aF, far, 5.2) + ln(J.aF, J.tF, far, 4.2);
+  s += ln(J.sF, J.eF, far, 4.6) + ln(J.eF, J.hF, far, 4.6);
+  // trunk
+  if (front){ s += ln(J.sF, J.sN, 'fg', 5.5) + ln(J.hipF, J.hipN, 'fg', 5.5); }
+  s += ln(J.pel, J.neck, 'fg', 6.5);
+  s += `<circle cx="${f1(J.head[0])}" cy="${f1(J.head[1])}" r="${B.head}" class="hd"/>`;
+  // near limbs
+  s += ln(J.hipN, J.kN, 'fg', 5.2) + ln(J.kN, J.aN, 'fg', 5.2) + ln(J.aN, J.tN, 'fg', 4.2);
+  for (const p of ex.props || []) if (p.k === 'band' && !p.under) s += bandSvg(J, p);
+  s += ln(J.sN, J.eN, 'fg', 4.6) + ln(J.eN, J.hN, 'fg', 4.6);
+  for (const p of ex.props || []){
+    if (p.k !== 'db') continue;
+    for (const at of [].concat(p.at)){
+      const c = offp(J[at], p.off);
+      if (p.o === undefined) s += `<circle cx="${f1(c[0])}" cy="${f1(c[1])}" r="4.6" class="ir"/>`;
+      else {
+        const a = add(c, p.o, 6.5), b = add(c, p.o+180, 6.5);
+        s += ln(a, b, 'irs', 2.4) + `<circle cx="${f1(a[0])}" cy="${f1(a[1])}" r="3.4" class="ir"/><circle cx="${f1(b[0])}" cy="${f1(b[1])}" r="3.4" class="ir"/>`;
+      }
+    }
+  }
+  return s;
+}
+function bandSvg(J, p){
+  const a = ref(J, p.a), b = ref(J, p.b);
+  return `<line x1="${f1(a[0])}" y1="${f1(a[1])}" x2="${f1(b[0])}" y2="${f1(b[1])}" class="bd"/>`;
+}
+
+/* ---------- poses ---------- */
+const ST = {p:[100,FL-55], t:-90, aN:{a:[92,90]}, aF:{a:[88,90]}, lN:{a:[90,90],f:0}, lF:{a:[90,90],f:0}};
+const FR = {p:[100,FL-55], t:-90, aN:{a:[86,92]}, aF:{a:[94,88]}, lN:{a:[88,90],f:20}, lF:{a:[92,90],f:160}};
+const SEAT = {p:[94,92.5], t:-90, lN:{a:[0,90],f:0}, lF:{a:[-6,94],f:0}};
+const LYING_SIDE = {p:[118,100], t:180, hd:180, aF:{a:[180,180]}, aN:{a:[12,4]}, g:true};
+
+const EX = {
+  mob_knee: {view:'side', props:[{k:'wall',x:152}], frames:[
+    {p:[110,72], t:-88, aN:{ik:[149,50],b:1}, aF:{ik:[149,54],b:1}, lN:{ik:[136,FL],b:-1,f:0}, lF:{ik:[90,FL],b:-1,f:-22}},
+    {p:[126,82], t:-84, aN:{ik:[149,50],b:1}, aF:{ik:[149,54],b:1}, lN:{ik:[136,FL],b:-1,f:0}, lF:{ik:[90,FL],b:-1,f:-22}},
+  ]},
+  mob_tspine: {view:'side', floor:false, tag:'Visto de cima', props:[{k:'mat'}], pp:true, frames:[
+    {p:[120,62], t:180, hd:180, lN:{a:[90,0],f:0}, lF:{a:[90,0],f:0}, aF:{a:[90,90]}, aN:{a:[90,90],s:[1,1]}, $h:.5, $d:.7},
+    {p:[120,62], t:180, hd:180, lN:{a:[90,0],f:0}, lF:{a:[90,0],f:0}, aF:{a:[90,90]}, aN:{a:[90,90],s:[.05,.05]}, $h:0, $d:.12},
+    {p:[120,62], t:180, hd:180, lN:{a:[90,0],f:0}, lF:{a:[90,0],f:0}, aF:{a:[90,90]}, aN:{a:[270,270],s:[.05,.05]}, $h:0, $d:.7},
+    {p:[120,62], t:180, hd:180, lN:{a:[90,0],f:0}, lF:{a:[90,0],f:0}, aF:{a:[90,90]}, aN:{a:[270,270],s:[1,1]}, $h:.7, $d:.7},
+  ]},
+  mob_wall: {view:'front', vb:[-22,-26,244,161], tag:'Costas na parede', props:[{k:'backwall'}], frames:[
+    M(FR, {aN:{a:[0,-90]}, aF:{a:[180,-90]}, $d:1.2}),
+    M(FR, {aN:{a:[-52,-78]}, aF:{a:[232,-102]}, $d:1.2}),
+  ]},
+  sh_er: {view:'front', props:[{k:'band',a:'hN',b:'hF'}], frames:[
+    M(FR, {aN:{a:[90,180],s:[1,1]}, aF:{a:[90,0],s:[1,1]}, $h:.35, $d:.5}),
+    M(FR, {aN:{a:[90,180],s:[1,.06]}, aF:{a:[90,0],s:[1,.06]}, $h:0, $d:.12}),
+    M(FR, {aN:{a:[90,0],s:[1,.06]}, aF:{a:[90,180],s:[1,.06]}, $h:0, $d:.5}),
+    M(FR, {aN:{a:[90,0],s:[1,.9]}, aF:{a:[90,180],s:[1,.9]}, $h:.45, $d:.5}),
+  ], pp:true},
+  sh_pa: {view:'front', props:[{k:'band',a:'hN',b:'hF'}], frames:[
+    M(FR, {aN:{a:[0,0],s:[.07,.06]}, aF:{a:[180,180],s:[.07,.06]}, $d:.9}),
+    M(FR, {aN:{a:[0,0],s:[1,1]}, aF:{a:[180,180],s:[1,1]}, $h:.5, $d:.9}),
+  ]},
+  sh_ytw: {view:'front', floor:false, vb:[-22,-26,244,161], tag:'De bruços · visto de cima', props:[{k:'mat'}], frames:[
+    M(FR, {aN:{a:[-60,-60]}, aF:{a:[240,240]}, $h:.6, $d:.9}),
+    M(FR, {aN:{a:[0,0]}, aF:{a:[180,180]}, $h:.6, $d:.9}),
+    M(FR, {aN:{a:[30,-45]}, aF:{a:[150,225]}, $h:.6, $d:.9}),
+  ]},
+  sh_scap: {view:'side', frames:[
+    {p:[90,90], t:-20.3, so:[0,0], aN:{a:[90,90]}, aF:{a:[90,90]}, lN:{a:[159.7,159.7],f:100}, lF:{a:[159.7,159.7],f:100}, g:true, $d:.8, $h:.3},
+    {p:[90,90], t:-15.8, so:[-1,-3], aN:{a:[90,90]}, aF:{a:[90,90]}, lN:{a:[159.7,159.7],f:100}, lF:{a:[159.7,159.7],f:100}, g:true, $d:.8, $h:.4},
+  ]},
+  kn_clam: {view:'side', tag:'Deitado de lado', frames:[
+    M(LYING_SIDE, {lF:{a:[5,175],s:[.62,.62],f:180}, lN:{a:[5,175],s:[.62,.62],f:180}, $d:1}),
+    M(LYING_SIDE, {lF:{a:[5,175],s:[.62,.62],f:180}, lN:{a:[-40,133.7],s:[.85,.94],f:180}, $h:.45, $d:1.1}),
+  ]},
+  kn_abd: {view:'side', tag:'Deitado de lado', frames:[
+    M(LYING_SIDE, {lF:{a:[0,0],f:10}, lN:{a:[-3,-3],f:7}, $d:1}),
+    M(LYING_SIDE, {lF:{a:[0,0],f:10}, lN:{a:[-32,-32],f:-22}, $h:.45, $d:1.2}),
+  ]},
+  kn_walk: {view:'front', props:[{k:'band',a:'kN',b:'kF'}], pp:true, frames:[
+    M(FR, {p:[92,70], aN:{a:[62,150]}, aF:{a:[118,30]}, lN:{ik:[102,FL],b:-1,f:20}, lF:{ik:[82,FL],b:1,f:160}, $d:.6, $h:.15}),
+    M(FR, {p:[100,70], aN:{a:[62,150]}, aF:{a:[118,30]}, lN:{ik:[118,FL],b:-1,f:20}, lF:{ik:[82,FL],b:1,f:160}, $d:.6, $h:.15}),
+    M(FR, {p:[108,70], aN:{a:[62,150]}, aF:{a:[118,30]}, lN:{ik:[118,FL],b:-1,f:20}, lF:{ik:[98,FL],b:1,f:160}, $d:.6, $h:.15}),
+  ]},
+  kn_tke: {view:'side', props:[{k:'post',x:160,y:100},{k:'band',a:[160,104],b:'kN'}], frames:[
+    {p:[98,68], t:-90, aN:{a:[108,30]}, aF:{a:[104,30]}, lN:{ik:[104,FL],b:-1,f:0}, lF:{ik:[94,FL],b:-1,f:0}, $d:.8},
+    {p:[100,65], t:-90, aN:{a:[108,30]}, aF:{a:[104,30]}, lN:{ik:[104,FL],b:-1,f:0}, lF:{ik:[94,FL],b:-1,f:0}, $h:1, $d:.8},
+  ]},
+
+  push_floorpress: {view:'side', props:[{k:'db',at:['hN']}], frames:[
+    {p:[110,FL-4], t:180, hd:183, aN:{a:[-90,-90],s:[.06,1]}, aF:{a:[-90,-90],s:[.06,1]}, lN:{ik:[136,FL],b:-1,f:0}, lF:{ik:[134,FL],b:-1,f:0}, $d:1.2},
+    {p:[110,FL-4], t:180, hd:183, aN:{a:[-90,-90],s:[1,1]}, aF:{a:[-90,-90],s:[1,1]}, lN:{ik:[136,FL],b:-1,f:0}, lF:{ik:[134,FL],b:-1,f:0}, $h:.3, $d:.9},
+  ]},
+  push_floorfly: {view:'front', floor:false, tag:'Deitado · visto de cima', props:[{k:'mat'},{k:'db',at:['hN','hF'],o:90}], frames:[
+    M(FR, {aN:{a:[0,0],s:[.06,.06]}, aF:{a:[180,180],s:[.06,.06]}, $d:1.3}),
+    M(FR, {aN:{a:[0,10],s:[1,1]}, aF:{a:[180,170],s:[1,1]}, $h:.3, $d:1}),
+  ]},
+  push_crossover: {view:'front', props:[{k:'bar',y:14,x1:16,x2:184},{k:'band',a:[178,14],b:'hN',under:true}], frames:[
+    M(FR, {aN:{a:[-18,-8]}, aF:{a:[118,30]}, $d:1}),
+    M(FR, {aN:{a:[100,150]}, aF:{a:[118,30]}, $h:.35, $d:1.2}),
+  ]},
+  push_ohp: {view:'front', props:[{k:'box',x:72,y:94,w:56},{k:'db',at:['hN','hF']}], frames:[
+    {p:[100,90], t:-90, aN:{a:[15,-90]}, aF:{a:[165,-90]}, lN:{a:[60,90],s:[.4,.73],f:20}, lF:{a:[120,90],s:[.4,.73],f:160}, $d:1},
+    {p:[100,90], t:-90, aN:{a:[-72,-88]}, aF:{a:[252,-92]}, lN:{a:[60,90],s:[.4,.73],f:20}, lF:{a:[120,90],s:[.4,.73],f:160}, $h:.3, $d:1.3},
+  ]},
+  push_pushdown: {view:'side', vb:[-12,-14,224,148], props:[{k:'bar',y:-4,x1:70,x2:168},{k:'band',a:[130,-4],b:'hN'}], frames:[
+    M(ST, {t:-84, aN:{a:[96,-40]}, aF:{a:[94,-40]}, $d:.9}),
+    M(ST, {t:-84, aN:{a:[96,90]}, aF:{a:[94,90]}, $h:.3, $d:1.2}),
+  ]},
+  push_french: {view:'side', props:[{k:'box',x:64,y:97,w:34},{k:'db',at:['hN']}], frames:[
+    M(SEAT, {aN:{a:[-95,120]}, aF:{a:[-93,120]}, $d:1}),
+    M(SEAT, {aN:{a:[-95,265]}, aF:{a:[-93,265]}, $h:.3, $d:1.3}),
+  ]},
+
+  pull_neg: {view:'side', vb:[0,-6,200,132], props:[{k:'bar',y:4,x1:58,x2:150}], frames:[
+    {p:[100,62], t:-90, aN:{ik:[104,6],b:1}, aF:{ik:[100,6],b:1}, lN:{a:[115,195],f:130}, lF:{a:[108,188],f:130}, $h:.4, $d:3.5},
+    {p:[101,90], t:-90, aN:{ik:[104,6],b:1}, aF:{ik:[100,6],b:1}, lN:{a:[115,195],f:130}, lF:{a:[108,188],f:130}, $h:.3, $d:.9},
+  ]},
+  pull_row: {view:'side', props:[{k:'db',at:['hN']}], frames:[
+    {p:[88,74], t:-25, aN:{a:[90,90]}, aF:{a:[88,90]}, lN:{ik:[100,FL],b:-1,f:0}, lF:{ik:[94,FL],b:-1,f:0}, $d:.8},
+    {p:[88,74], t:-25, aN:{a:[160,95]}, aF:{a:[158,95]}, lN:{ik:[100,FL],b:-1,f:0}, lF:{ik:[94,FL],b:-1,f:0}, $h:.3, $d:1.2},
+  ]},
+  pull_onearm: {view:'side', props:[{k:'box',x:78,y:100,w:94},{k:'db',at:['hN']}], frames:[
+    {p:[110,70], t:-12, aN:{a:[90,90]}, aF:{ik:[150,97.5],b:1}, lN:{ik:[104,FL],b:-1,f:0}, lF:{a:[90,180],f:180}, $d:.8},
+    {p:[110,70], t:-12, aN:{a:[165,95]}, aF:{ik:[150,97.5],b:1}, lN:{ik:[104,FL],b:-1,f:0}, lF:{a:[90,180],f:180}, $h:.3, $d:1.2},
+  ]},
+  pull_revfly: {view:'front', tag:'Tronco inclinado à frente', props:[{k:'db',at:['hN','hF']}], frames:[
+    {p:[100,70], t:-90, ts:.45, hs:.45, aN:{a:[95,92]}, aF:{a:[85,88]}, lN:{ik:[108,FL],b:-1,f:20}, lF:{ik:[92,FL],b:1,f:160}, $d:1},
+    {p:[100,70], t:-90, ts:.45, hs:.45, aN:{a:[-4,6]}, aF:{a:[184,174]}, lN:{ik:[108,FL],b:-1,f:20}, lF:{ik:[92,FL],b:1,f:160}, $h:.35, $d:1.2},
+  ]},
+  pull_conc: {view:'side', props:[{k:'box',x:64,y:97,w:34},{k:'db',at:['hN']}], frames:[
+    M(SEAT, {t:-55, aN:{a:[77,95]}, aF:{ik:[118,90],b:1}, $d:1}),
+    M(SEAT, {t:-55, aN:{a:[77,-100]}, aF:{ik:[118,90],b:1}, $h:.3, $d:1.3}),
+  ]},
+  pull_hammer: {view:'side', props:[{k:'db',at:['hN','hF']}], frames:[
+    M(ST, {aN:{a:[92,90]}, aF:{a:[90,90]}, $d:1}),
+    M(ST, {aN:{a:[95,-75]}, aF:{a:[93,-75]}, $h:.3, $d:1.3}),
+  ]},
+
+  q_squat: {view:'side', props:[{k:'box',x:58,y:92,w:36},{k:'db',at:['hN'],o:90}], frames:[
+    {p:[104,65], t:-90, aN:{a:[70,-70]}, aF:{a:[70,-70]}, lN:{ik:[110,FL],b:-1,f:0}, lF:{ik:[106,FL],b:-1,f:0}, $h:.3, $d:1.6},
+    {p:[91,89], t:-62, aN:{a:[85,-40]}, aF:{a:[85,-40]}, lN:{ik:[110,FL],b:-1,f:0}, lF:{ik:[106,FL],b:-1,f:0}, $h:.2, $d:1.1},
+  ]},
+  q_curl: {view:'side', tag:'De bruços', props:[{k:'post',x:14,y:104},{k:'band',a:[14,110],b:'aN'}], frames:[
+    {p:[100,FL-3], t:0, hd:0, aN:{a:[10,175]}, aF:{a:[10,175]}, lN:{a:[180,180],f:192}, lF:{a:[180,180],f:192}, $d:1},
+    {p:[100,FL-3], t:0, hd:0, aN:{a:[10,175]}, aF:{a:[10,175]}, lN:{a:[180,258],f:300}, lF:{a:[180,258],f:300}, $h:.3, $d:1.4},
+  ]},
+  q_wallsit: {view:'side', props:[{k:'wall',x:56,w:8},{k:'db',at:['hN']}], frames:[
+    {p:[70,70], t:-90, aN:{ik:'kN',off:[-6,-4],b:1}, aF:{ik:'kF',off:[-6,-4],b:1}, lN:{ik:[92,FL],b:-1,f:0}, lF:{ik:[88,FL],b:-1,f:0}, $h:.4, $d:1},
+    {p:[70,74], t:-90, aN:{ik:'kN',off:[-6,-4],b:1}, aF:{ik:'kF',off:[-6,-4],b:1}, lN:{ik:[92,FL],b:-1,f:0}, lF:{ik:[88,FL],b:-1,f:0}, $h:2.4, $d:1},
+  ]},
+  q_abdstand: {view:'front', props:[{k:'wall',x:36,w:8},{k:'band',a:'aN',b:'aF'}], frames:[
+    M(FR, {p:[80,64], aN:{a:[60,150]}, aF:{ik:[46,56],b:1}, lN:{a:[88,88]}, lF:{a:[92,90]}, $d:.8}),
+    M(FR, {p:[80,64], aN:{a:[60,150]}, aF:{ik:[46,56],b:1}, lN:{a:[62,62]}, lF:{a:[92,90]}, $h:.35, $d:1.1}),
+  ]},
+  q_calf: {view:'side', vb:[-14,-30,236,156], props:[{k:'box',x:103,y:100,w:56},{k:'db',at:['hN']}], frames:[
+    {p:[102.5,46.3], t:-90, aN:{a:[92,90]}, aF:{a:[88,90]}, lN:{a:[90,90],f:-25}, lF:{a:[100,160],f:150}, $h:.3, $d:1},
+    {p:[104.9,35.6], t:-90, aN:{a:[92,90]}, aF:{a:[88,90]}, lN:{a:[90,90],f:50}, lF:{a:[100,160],f:150}, $h:.4, $d:1.3},
+  ]},
+  q_revlunge: {view:'side', props:[{k:'db',at:['hN']}], frames:[
+    {p:[108,65], t:-90, aN:{a:[92,90]}, aF:{a:[88,90]}, lN:{ik:[112,FL],b:-1,f:0}, lF:{ik:[104,FL],b:-1,f:0}, $h:.3, $d:1.4},
+    {p:[96,84], t:-84, aN:{a:[92,90]}, aF:{a:[88,90]}, lN:{ik:[112,FL],b:-1,f:0}, lF:{ik:[62,FL],b:-1,f:60}, $h:.2, $d:1.1},
+  ]},
+  q_slidecurl: {view:'side', tag:'Calcanhares numa toalha', props:[{k:'box',x:116,y:119.5,w:42}], frames:[
+    {neck:[58,FL-4], t:162, hd:180, aN:{a:[0,0]}, aF:{a:[0,0]}, lN:{ik:[126,FL-1],b:-1,f:-60}, lF:{ik:[124,FL-1],b:-1,f:-60}, $h:.3, $d:1.6},
+    {neck:[58,FL-4], t:172, hd:180, aN:{a:[0,0]}, aF:{a:[0,0]}, lN:{ik:[150,FL-1],b:-1,f:-60}, lF:{ik:[148,FL-1],b:-1,f:-60}, $h:.2, $d:1.1},
+  ]},
+
+  x_declpush: {view:'side', props:[{k:'box',x:24,y:102,w:40}], frames:[
+    {neck:[146.4,80], t:-6.65, aN:{ik:[146,FL],b:1}, aF:{ik:[143,FL],b:1}, lN:{a:[173.35,173.35],f:90}, lF:{a:[173.35,173.35],f:90}, $h:.3, $d:1.4},
+    {neck:[144.6,110], t:11.4, aN:{ik:[146,FL],b:1}, aF:{ik:[143,FL],b:1}, lN:{a:[191.4,191.4],f:90}, lF:{a:[191.4,191.4],f:90}, $h:.15, $d:1},
+  ]},
+  x_lowfly: {view:'front', props:[{k:'post',x:180,y:110},{k:'band',a:[180,113],b:'hN',under:true}], frames:[
+    M(FR, {aN:{ik:[145.6,53.5],b:-1,s:[1,1]}, aF:{a:[118,30]}, $d:1.2}),
+    M(FR, {aN:{ik:[100,23],b:-1,s:[.32,.32]}, aF:{a:[118,30]}, $h:.35, $d:1.2}),
+  ]},
+  x_lat: {view:'front', props:[{k:'db',at:['hN','hF']}], frames:[
+    M(FR, {aN:{a:[92,90]}, aF:{a:[88,90]}, $d:1}),
+    M(FR, {aN:{a:[2,8]}, aF:{a:[178,172]}, $h:.35, $d:1.3}),
+  ]},
+  x_skull: {view:'side', props:[{k:'db',at:['hN']}], frames:[
+    {p:[110,FL-4], t:180, hd:183, aN:{a:[-100,200]}, aF:{a:[-100,200]}, lN:{ik:[136,FL],b:-1,f:0}, lF:{ik:[134,FL],b:-1,f:0}, $h:.2, $d:1},
+    {p:[110,FL-4], t:180, hd:183, aN:{a:[-100,260]}, aF:{a:[-100,260]}, lN:{ik:[136,FL],b:-1,f:0}, lF:{ik:[134,FL],b:-1,f:0}, $h:.3, $d:1.3},
+  ]},
+  x_altcurl: {view:'side', props:[{k:'db',at:['hN','hF']}], frames:[
+    M(ST, {aN:{a:[92,90]}, aF:{a:[90,90]}, $h:.2, $d:1}),
+    M(ST, {aN:{a:[95,-80]}, aF:{a:[90,90]}, $h:.3, $d:1.3}),
+    M(ST, {aN:{a:[92,90]}, aF:{a:[90,90]}, $h:.2, $d:1}),
+    M(ST, {aN:{a:[92,90]}, aF:{a:[93,-80]}, $h:.3, $d:1.3}),
+  ]},
+  x_bandcurl: {view:'side', props:[{k:'post',x:62,y:108},{k:'band',a:[62,112],b:'hN',under:true}], frames:[
+    M(ST, {aN:{a:[100,100]}, aF:{a:[96,96]}, $d:1}),
+    M(ST, {aN:{a:[100,-60]}, aF:{a:[96,96]}, $h:.3, $d:1.3}),
+  ]},
+
+  w_rdl: {view:'side', props:[{k:'db',at:['hN']}], frames:[
+    {p:[100,65], t:-90, aN:{a:[90,90]}, aF:{a:[88,90]}, lN:{ik:[104,FL],b:-1,f:0}, lF:{ik:[100,FL],b:-1,f:0}, $h:.3, $d:1.6},
+    {p:[90,68], t:-15, aN:{a:[90,90]}, aF:{a:[88,90]}, lN:{ik:[104,FL],b:-1,f:0}, lF:{ik:[100,FL],b:-1,f:0}, $h:.2, $d:1.2},
+  ]},
+  w_hipthrust: {view:'side', props:[{k:'box',x:18,y:92,w:44},{k:'db',at:'pel',off:[2,-7]}], frames:[
+    {neck:[60,89.5], t:213, hd:213, aN:{ik:'pel',off:[2,-7],b:1}, aF:{ik:'pel',off:[0,-7],b:1}, lN:{ik:[126,FL],b:-1,f:0}, lF:{ik:[122,FL],b:-1,f:0}, $d:1.2},
+    {neck:[60,89.5], t:180, hd:183, aN:{ik:'pel',off:[2,-7],b:1}, aF:{ik:'pel',off:[0,-7],b:1}, lN:{ik:[126,FL],b:-1,f:0}, lF:{ik:[122,FL],b:-1,f:0}, $h:1, $d:1.2},
+  ]},
+  w_hambridge: {view:'side', props:[{k:'box',x:140,y:100,w:46}], frames:[
+    {neck:[58,FL-4], t:180, hd:180, aN:{a:[0,0]}, aF:{a:[0,0]}, lN:{ik:[148,97.5],b:-1,f:-60}, lF:{ik:[146,97.5],b:-1,f:-60}, $d:1.1},
+    {neck:[58,FL-4], t:160, hd:180, aN:{a:[0,0]}, aF:{a:[0,0]}, lN:{ik:[148,97.5],b:-1,f:-60}, lF:{ik:[146,97.5],b:-1,f:-60}, $h:.6, $d:1.2},
+  ]},
+  w_calfseat: {view:'side', props:[{k:'box',x:64,y:97,w:34},{k:'db',at:'kN',off:[-8,-6]}], frames:[
+    {p:[94,92.5], t:-90, aN:{ik:'kN',off:[-8,-7],b:1}, aF:{ik:'kF',off:[-8,-7],b:1}, lN:{ik:[121,FL],b:-1,f:0}, lF:{ik:[117,FL],b:-1,f:0}, $d:.8},
+    {p:[94,92.5], t:-90, aN:{ik:'kN',off:[-8,-7],b:1}, aF:{ik:'kF',off:[-8,-7],b:1}, lN:{ik:[124.2,112.6],b:-1,f:50}, lF:{ik:[120.2,112.6],b:-1,f:50}, $h:.4, $d:1},
+  ]},
+};
+EX.q_abdside = {...EX.kn_abd, tag:'Deitado de lado', props:[{k:'db',at:'mN',off:[0,-4.5],o:0}]};
+EX.w_abdband = {...EX.kn_abd, tag:'Deitado de lado', props:[{k:'band',a:'kN',b:'kF'}]};
+
+/* ---------- plan ---------- */
+const FW = id => `https://fitwill.app/pt-br/exercise/${id}/`;
+const MOB = {title:'Mobilidade', hint:'todos os dias, uns 3 min', items:[
+  ['mob_knee','Joelho na parede (tornozelo)','1 × 10 por lado','Joelho da frente vai em direção à parede; calcanhar no chão.', FW('1969/mobilization-of-ankle-stretch')],
+  ['mob_tspine','Rotação torácica deitado de lado','1 × 8 por lado','Joelhos dobrados; o braço de cima abre para trás.', 'https://fitwill.app/pt/exercise/3539/lying-t-spine-mobility-stretching/'],
+  ['mob_wall','Deslizamento de braços na parede','1 × 10','Costas e braços encostados na parede o tempo todo.', FW('2945/scapular-slide-back-to-wall')],
+]};
+const SHO = {title:'Ombro', hint:'elástico leve ou nenhum', items:[
+  ['sh_er','Rotação externa com elástico','2 × 15','Cotovelos colados ao corpo; só o antebraço gira.', FW('0921/band-standing-external-shoulder-rotation')],
+  ['sh_pa','Abertura com elástico (pull-apart)','2 × 15','Braços esticados; aperte as escápulas no fim.', FW('4568/resistance-band-pull-apart')],
+  ['sh_ytw','Y-T-W deitado de bruços','1 × 8 de cada letra','Sem peso; polegares para cima.', FW('5822/prone-y-raise')],
+  ['sh_scap','Flexão escapular','1 × 10','Braços esticados; só as escápulas se movem. Joelhos fora do chão duro.', 'https://fitwill.app/pt/exercise/4117/kneeling-scapular-push-up/'],
+]};
+const KNE = {title:'Joelho', hint:'elástico leve ou nenhum, 12–15 reps', items:[
+  ['kn_clam','Ostra','2 × 15 por lado','Pés juntos; o quadril não rola para trás.', FW('5780/resistance-band-clam')],
+  ['kn_abd','Abdução deitado de lado','2 × 15 por lado','Perna de cima reta; sobe e desce devagar.', 'https://www.lyfta.app/pt/exercise/abdu%C3%A7%C3%A3o-lateral-do-quadril-6t6'],
+  ['kn_walk','Caminhada lateral com elástico','2 × 10 passos por lado','Passos curtos, só levemente agachado.', FW('6607/resistance-band-lateral-walk')],
+  ['kn_tke','Extensão terminal do joelho (TKE)','2 × 15 por perna','Elástico atrás do joelho; estique até o fim e segure 2 s.', 'https://www.catalystathletics.com/exercise/782/TKE-Terminal-Knee-Extension/'],
+]};
+const DAYS = [
+  {key:'seg', wd:1, short:'Seg', name:'Segunda', focus:'Push', desc:'Peito, ombro e tríceps', warm:[MOB,SHO], main:[
+    ['push_floorpress','Supino no chão com halteres','2 + top set · 6–12','Cotovelos a uns 45° do corpo; o chão limita a descida.', FW('3668/dumbbell-floor-chest-press')],
+    ['push_floorfly','Crucifixo no chão com halteres','2 + top set · 10–15','Cotovelos levemente dobrados; braços param ao tocar o chão.', 'https://musclewiki.com/pt-br/exercise/dumbbell-floor-fly'],
+    ['push_crossover','Crossover unilateral com elástico','2 + top set · 12–20 por braço','Um braço de cada vez, com o mesmo elástico preso no alto da barra fixa. Puxe para baixo e para a frente, até o quadril oposto.', 'https://fitwill.app/pt/exercise/0898/band-high-fly/'],
+    ['push_ohp','Desenvolvimento sentado','1 + top set · 8–12','Pegada neutra: palmas viradas uma para a outra.', FW('0405/dumbbell-seated-shoulder-press')],
+    ['push_pushdown','Tríceps com elástico na barra','2 + top set · 12–20','Cotovelos colados ao corpo.', FW('5268/resistance-band-triceps-pushdown')],
+    ['push_french','Tríceps francês com halter','2 + top set · 10–15','Sentado, halter com as duas mãos atrás da cabeça.', FW('2488/dumbbell-seated-triceps-extension')],
+  ]},
+  {key:'ter', wd:2, short:'Ter', name:'Terça', focus:'Pull', desc:'Costas e bíceps', warm:[MOB,SHO], main:[
+    ['pull_neg','Barra fixa: negativa pronada','2 + top set · 4–8','Suba pelo degrau e desça em 3–5 s.', FW('1763/shoulder-grip-pull-up')],
+    ['pull_row','Remada curvada com halteres','2 + top set · 8–12','Costas retas; puxe em direção ao quadril.', FW('2482/dumbbell-bent-over-row')],
+    ['pull_onearm','Remada unilateral no degrau','2 + top set · 8–12','Apoie o joelho direito no degrau, não o esquerdo.', FW('2393/dumbbell-one-arm-bent-over-row')],
+    ['pull_revfly','Crucifixo invertido','1 + top set · 12–15','Halteres leves; aperte as escápulas no topo.', FW('2487/dumbbell-rear-delt-fly')],
+    ['pull_conc','Rosca concentrada','2 + top set · 10–15','Cotovelo apoiado na parte interna da coxa.', FW('2372/dumbbell-concentration-curl')],
+    ['pull_hammer','Rosca martelo','2 + top set · 10–15','Sem balançar o corpo.', FW('2239/dumbbell-hammer-curl')],
+  ]},
+  {key:'qua', wd:3, short:'Qua', name:'Quarta', focus:'Pernas · quadríceps', desc:'Mais pesado que antes, e ainda o dia mais delicado para o joelho. Se doer, tire primeiro o afundo.', warm:[MOB,KNE], main:[
+    ['q_squat','Agachamento até o degrau','3 + top set · 8–12','Halter no peito. Desça em 3 s, encoste no degrau sem relaxar e suba. Coxa acima do paralelo.', 'https://www.lyfta.app/pt/exercise/agachamento-com-halteres-e-caixa-de-ta%C3%A7a-8xv'],
+    ['q_revlunge','Afundo reverso curto com halteres','2 + top set · 8–12 por perna','Passo para trás; a canela da frente fica quase vertical. Desça só até onde não dói.', 'https://fitwill.app/pt/exercise/2219/dumbbell-rear-lunge/'],
+    ['q_slidecurl','Flexora deslizante com toalha','2 + top set · 8–12','Chão liso. Quadril elevado; os calcanhares deslizam para a frente e voltam puxando.', FW('3742/sliding-leg-curl-on-floor-with-towel')],
+    ['q_wallsit','Isometria na parede com halteres','3 séries · 30–45 s','Halteres sobre as coxas; joelhos dobrados só uns 45°.', FW('1558/dumbbell-wall-squat')],
+    ['q_abdside','Abdução deitado com halter','2 + top set · 12–15 por lado','Halter apoiado na lateral da coxa de cima; perna reta, sobe e desce devagar.', FW('0837/weighted-lying-hip-abduction')],
+    ['q_calf','Panturrilha unilateral no degrau','3 + top set · 10–15','Halter na mão. Pausa de 2 s embaixo e em cima.', FW('5003/standing-single-leg-calf-raise-on-a-staircase')],
+  ]},
+  {key:'qui', wd:4, short:'Qui', name:'Quinta', focus:'Descanso', rest:true, desc:'Dia livre. Se o joelho estiver sem dor, faça o bloco de joelho leve.', warm:[KNE], main:[]},
+  {key:'sex', wd:5, short:'Sex', name:'Sexta', focus:'Upper', desc:'Tronco completo', warm:[MOB,SHO], main:[
+    ['x_declpush','Flexão com os pés no degrau','2 + top set · 6–15','Não saiu 6? Faça a flexão normal. Cotovelos a uns 45°.', FW('0280/decline-push-up')],
+    ['push_floorfly','Crucifixo no chão com halteres','2 + top set · 10–15','Cotovelos levemente dobrados; desça em 3 s e pare quando os braços tocarem o chão.', 'https://musclewiki.com/pt-br/exercise/dumbbell-floor-fly'],
+    ['pull_neg','Barra fixa: negativa supinada','2 + top set · 4–8','Palmas viradas para você; desça em 3–5 s.', FW('4725/chin-up-izometric-and-negative')],
+    ['x_lat','Elevação lateral','1 + top set · 12–15','Suba até a linha do ombro, não acima.', 'https://fitwill.app/pt/exercise/0334/dumbbell-lateral-raise/'],
+    ['x_skull','Tríceps testa no chão','2 + top set · 10–15','Cotovelos apontando para cima, sem abrir.', FW('2738/dumbbell-lying-triceps-extension-on-floor')],
+    ['x_altcurl','Rosca alternada com halteres','2 + top set · 10–15 por braço','Gire a palma para cima enquanto sobe; desça em 3 s, sem balançar o corpo.', FW('2584/dumbbell-alternate-biceps-curl')],
+  ]},
+  {key:'sab', wd:6, short:'Sáb', name:'Sábado', focus:'Pernas · posterior', desc:'Glúteos e posterior de coxa', warm:[MOB,KNE], main:[
+    ['w_rdl','Stiff com halteres','2 + top set · 8–12','Joelhos levemente dobrados, quadril para trás, costas retas.', FW('2222/dumbbell-romanian-deadlift')],
+    ['w_hipthrust','Elevação pélvica no degrau','2 + top set · 8–15','Costas no degrau, halter no quadril; pausa de 1 s no topo.', FW('2754/weighted-hip-thrusts')],
+    ['w_hambridge','Ponte de posterior','2 + top set · 10–15','Calcanhares no degrau, joelhos quase esticados.', 'https://fitwill.app/pt/exercise/2472/glute-bridge-two-legs-on-bench/'],
+    ['w_abdband','Abdução deitado com elástico','2 + top set · 15–20','Elástico acima dos joelhos; perna de cima reta.', 'https://www.lyfta.app/pt/exercise/abdu%C3%A7%C3%A3o-lateral-do-quadril-6t6'],
+    ['w_calfseat','Panturrilha sentado no degrau','2 + top set · 15–20','Halter sobre as coxas, perto do quadril, nunca na patela.', FW('1379/dumbbell-seated-calf-raise')],
+  ]},
+  {key:'dom', wd:0, short:'Dom', name:'Domingo', focus:'Descanso', rest:true, desc:'Descanso completo. Uma caminhada leve é bem-vinda.', warm:[], main:[]},
+];
+
+/* ---------- animation engine ---------- */
+class Anim {
+  constructor(svg, id){
+    this.ex = EX[id]; this.g = svg.querySelector('g.fig');
+    const f = this.ex.frames, n = f.length;
+    this.seq = this.ex.pp && n > 2 ? [...f.keys(), ...[...f.keys()].slice(1, -1).reverse()] : [...f.keys()];
+    this.steps = this.seq.map((fi, i) => {
+      const ni = this.seq[(i+1) % this.seq.length];
+      const fr = f[fi], next = f[ni];
+      const d = (this.ex.pp && n > 2 && ni < fi) ? (next.$d ?? 1) : (fr.$d ?? 1);
+      return {a:fr, b:next, h:fr.$h ?? .35, d};
+    });
+    this.period = this.steps.reduce((s, x) => s + x.h + x.d, 0);
+    this.t = 0; this.playing = !reduceMotion; this.visible = false;
+    this.draw(0);
+  }
+  poseAt(t){
+    t = ((t % this.period) + this.period) % this.period;
+    for (const s of this.steps){
+      if (t < s.h) return s.a;
+      t -= s.h;
+      if (t < s.d){ const u = t/s.d; return lerp(s.a, s.b, u*u*(3-2*u)); }
+      t -= s.d;
+    }
+    return this.steps[0].a;
+  }
+  draw(t){ this.g.innerHTML = figure(this.ex, this.poseAt(t)); }
+}
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let anims = [];
+let last = performance.now();
+function loop(now){
+  const dt = Math.min(.1, (now - last)/1000); last = now;
+  for (const a of anims){ if (a.playing && a.visible){ a.t += dt; a.draw(a.t); } }
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => { for (const e of es){ const a = e.target.__anim; if (a) a.visible = e.isIntersecting; } }, {rootMargin:'80px'}) : null;
+
+/* ---------- storage (per-viewer convenience) ---------- */
+const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
+function loadDone(){ try { return JSON.parse(localStorage.getItem('treino-feito-' + todayKey()) || '{}'); } catch(e){ return {}; } }
+function saveDone(o){ try { localStorage.setItem('treino-feito-' + todayKey(), JSON.stringify(o)); } catch(e){} }
+let done = loadDone();
+
+/* ---------- UI ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const todayWd = new Date().getDay();
+let current = DAYS.find(d => d.wd === todayWd).key;
+
+function stageSvg(id){
+  const ex = EX[id]; const vb = ex.vb || [0,0,200,132];
+  return `<svg viewBox="${vb.join(' ')}" aria-hidden="true">${staticProps(ex)}<g class="fig"></g></svg>`;
+}
+function card(item, dayKey, block){
+  const [id, name, dose, cue, link] = item;
+  const key = `${dayKey}:${block}:${id}`;
+  const isDone = !!done[key];
+  return `<article class="card${isDone ? ' is-done' : ''}" data-key="${esc(key)}">
+    <button class="stage" type="button" data-id="${id}" aria-label="Pausar ou continuar a animação de ${esc(name)}">${stageSvg(id)}<span class="ps" hidden>PAUSADO</span></button>
+    <div class="info">
+      <h4>${esc(name)}</h4>
+      <span class="dose">${esc(dose)}</span>${EX[id].tag ? `<span class="tag">${esc(EX[id].tag)}</span>` : ''}
+      <p class="cue">${esc(cue)}</p>
+      <div class="row">
+        <a class="vid" href="${esc(link)}" target="_blank" rel="noopener">Ver vídeo ↗</a>
+        <label class="done"><input type="checkbox" id="chk-${esc(key).replace(/[^a-z0-9]/gi,'-')}" ${isDone ? 'checked' : ''}> Feito</label>
+      </div>
+    </div>
+  </article>`;
+}
+function renderDays(){
+  const nav = document.getElementById('days');
+  nav.innerHTML = DAYS.filter(d => d.wd !== 0).concat(DAYS.filter(d => d.wd === 0)).map(d =>
+    `<button class="day" type="button" style="--dc:var(--${d.rest ? 'rest' : d.key})" aria-pressed="${d.key === current}" data-day="${d.key}">${d.short}<small>${esc(d.focus)}${d.wd === todayWd ? ' · <b>hoje</b>' : ''}</small></button>`
+  ).join('');
+}
+function renderMain(){
+  const d = DAYS.find(x => x.key === current);
+  document.documentElement.style.setProperty('--accent', `var(--${d.rest ? 'rest' : d.key})`);
+  let total = 0;
+  let h = `<div class="dayhead"><h2>${esc(d.name)} · ${esc(d.focus)}</h2><p>${esc(d.desc)}</p><span class="prog" id="prog"></span></div>`;
+  for (const w of d.warm){
+    total += w.items.length;
+    h += `<section class="block"><div class="blockhead"><h3>Aquecimento · ${esc(w.title)}</h3><span>${esc(w.hint)}</span></div><div class="grid">${w.items.map(it => card(it, d.key, w.title)).join('')}</div></section>`;
+  }
+  if (d.main.length){
+    total += d.main.length;
+    h += `<section class="block"><div class="blockhead"><h3>Treino</h3><span>${d.main.length} exercícios</span></div><div class="grid">${d.main.map(it => card(it, d.key, 'main')).join('')}</div></section>`;
+  }
+  if (d.rest && !d.warm.length) h += `<div class="rest"><p><b>Hoje é descanso.</b></p><p>O músculo cresce na recuperação. Durma bem e coma proteína suficiente.</p></div>`;
+  if (d.main.length || d.warm.length) h += `<div><button class="reset" type="button" id="reset">Desmarcar tudo de hoje</button></div>`;
+  const main = document.getElementById('main');
+  if (io) for (const a of anims) io.unobserve(a.el);
+  main.innerHTML = h;
+  anims = [];
+  main.querySelectorAll('.stage').forEach(btn => {
+    const a = new Anim(btn.querySelector('svg'), btn.dataset.id);
+    a.el = btn; btn.__anim = a;
+    btn.querySelector('.ps').hidden = a.playing;
+    anims.push(a);
+    if (io) io.observe(btn); else a.visible = true;
+  });
+  updateProg(total);
+}
+function updateProg(total){
+  const cards = document.querySelectorAll('#main .card');
+  const n = [...cards].filter(c => c.classList.contains('is-done')).length;
+  const p = document.getElementById('prog');
+  if (p) p.textContent = cards.length ? `${n} de ${cards.length} feitos` : '';
+}
+document.getElementById('days').addEventListener('click', e => {
+  const b = e.target.closest('.day'); if (!b) return;
+  current = b.dataset.day; /* ---------- daily tracking ---------- */
+const TRAIN_WD = [1,2,3,5,6];
+const dk = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function loadHist(){ try { return JSON.parse(localStorage.getItem('treino-historico') || '{}'); } catch(e){ return {}; } }
+function saveHist(){ try { localStorage.setItem('treino-historico', JSON.stringify(hist)); } catch(e){} }
+let hist = loadHist();
+let since = (() => { try { let v = localStorage.getItem('treino-inicio'); if (!v){ v = dk(new Date()); localStorage.setItem('treino-inicio', v); } return v; } catch(e){ return dk(new Date()); } })();
+function noon(d){ const x = new Date(d); x.setHours(12,0,0,0); return x; }
+function streak(){
+  let n = 0; const d = noon(new Date()); const today = dk(d);
+  for (let i = 0; i < 500; i++){
+    const k = dk(d);
+    if (hist[k]) n++;
+    else if (k < since) break;
+    else if (TRAIN_WD.includes(d.getDay()) && k !== today) break;
+    d.setDate(d.getDate()-1);
+  }
+  return n;
+}
+function renderTracker(){
+  const el = document.getElementById('tracker');
+  const now = noon(new Date()), today = dk(now);
+  const isTrain = TRAIN_WD.includes(now.getDay()), doneToday = !!hist[today];
+  const start = new Date(now); start.setDate(now.getDate() - ((now.getDay()+6)%7) - 21);
+  let cells = '';
+  for (let i = 0; i < 28; i++){
+    const d = new Date(start); d.setDate(start.getDate()+i);
+    const k = dk(d), fut = k > today, cls = ['c'];
+    if (hist[k]) cls.push('ok');
+    else if (!TRAIN_WD.includes(d.getDay())) cls.push('rest');
+    else if (!fut && k !== today && k >= since) cls.push('miss');
+    if (k === today) cls.push('today');
+    if (fut) cls.push('fut');
+    cells += `<button type="button" class="${cls.join(' ')}" data-date="${k}" ${fut ? 'disabled' : ''} aria-label="${d.getDate()}/${d.getMonth()+1}${hist[k] ? ', treino feito' : ''}">${hist[k] ? '✔' : d.getDate()}</button>`;
+  }
+  const month = Object.keys(hist).filter(k => k.startsWith(today.slice(0,7))).length;
+  const late = !doneToday && isTrain && new Date().getHours() >= 20;
+  el.innerHTML = `<div class="tr-top">
+      <div class="stat"><b>${streak()}</b><span>treinos seguidos</span></div>
+      <div class="stat"><b>${month}</b><span>treinos este mês</span></div>
+      <button type="button" id="today-btn" class="today-btn${doneToday ? ' on' : ''}" aria-pressed="${doneToday}">${doneToday ? '✔ Treino de hoje feito' : (isTrain ? 'Marcar treino de hoje como feito' : 'Hoje é descanso · marcar mesmo assim')}</button>
+    </div>
+    ${late ? '<p class="nudge">Ainda não marcou o treino de hoje. Já fez?</p>' : ''}
+    <div class="tr-body">
+      <div class="cal"><div class="wk">S</div><div class="wk">T</div><div class="wk">Q</div><div class="wk">Q</div><div class="wk">S</div><div class="wk">S</div><div class="wk">D</div>${cells}</div>
+      <p class="tr-note">O dia é marcado sozinho quando você conclui todos os exercícios, ou pelo botão. Toque num dia passado para corrigir. Quinta e domingo são descanso e não quebram a sequência.</p>
+    </div>`;
+}
+document.getElementById('tracker').addEventListener('click', e => {
+  const b = e.target.closest('#today-btn, .c'); if (!b || b.disabled) return;
+  const k = b.id === 'today-btn' ? dk(new Date()) : b.dataset.date;
+  if (hist[k]) delete hist[k]; else hist[k] = 1;
+  saveHist(); renderTracker();
+});
+document.addEventListener('visibilitychange', () => { if (!document.hidden) renderTracker(); });
+renderTracker();
+renderDays(); renderMain();
+});
+document.getElementById('main').addEventListener('click', e => {
+  const st = e.target.closest('.stage');
+  if (st){ const a = st.__anim; a.playing = !a.playing; st.querySelector('.ps').hidden = a.playing; return; }
+  if (e.target.id === 'reset'){
+    for (const k of Object.keys(done)) if (k.startsWith(current + ':')) delete done[k];
+    saveDone(done); renderMain();
+  }
+});
+document.getElementById('main').addEventListener('change', e => {
+  if (!e.target.matches('.done input')) return;
+  const c = e.target.closest('.card'), k = c.dataset.key;
+  if (e.target.checked) done[k] = 1; else delete done[k];
+  c.classList.toggle('is-done', e.target.checked);
+  saveDone(done); updateProg();
+  const cards = [...document.querySelectorAll('#main .card')];
+  const d = DAYS.find(x => x.key === current);
+  if (d.wd === new Date().getDay() && d.main.length && cards.length && cards.every(x => x.classList.contains('is-done')) && !hist[dk(new Date())]){
+    hist[dk(new Date())] = 1; saveHist(); renderTracker();
+  }
+});
+/* ---------- daily tracking ---------- */
+const TRAIN_WD = [1,2,3,5,6];
+const dk = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function loadHist(){ try { return JSON.parse(localStorage.getItem('treino-historico') || '{}'); } catch(e){ return {}; } }
+function saveHist(){ try { localStorage.setItem('treino-historico', JSON.stringify(hist)); } catch(e){} }
+let hist = loadHist();
+let since = (() => { try { let v = localStorage.getItem('treino-inicio'); if (!v){ v = dk(new Date()); localStorage.setItem('treino-inicio', v); } return v; } catch(e){ return dk(new Date()); } })();
+function noon(d){ const x = new Date(d); x.setHours(12,0,0,0); return x; }
+function streak(){
+  let n = 0; const d = noon(new Date()); const today = dk(d);
+  for (let i = 0; i < 500; i++){
+    const k = dk(d);
+    if (hist[k]) n++;
+    else if (k < since) break;
+    else if (TRAIN_WD.includes(d.getDay()) && k !== today) break;
+    d.setDate(d.getDate()-1);
+  }
+  return n;
+}
+function renderTracker(){
+  const el = document.getElementById('tracker');
+  const now = noon(new Date()), today = dk(now);
+  const isTrain = TRAIN_WD.includes(now.getDay()), doneToday = !!hist[today];
+  const start = new Date(now); start.setDate(now.getDate() - ((now.getDay()+6)%7) - 21);
+  let cells = '';
+  for (let i = 0; i < 28; i++){
+    const d = new Date(start); d.setDate(start.getDate()+i);
+    const k = dk(d), fut = k > today, cls = ['c'];
+    if (hist[k]) cls.push('ok');
+    else if (!TRAIN_WD.includes(d.getDay())) cls.push('rest');
+    else if (!fut && k !== today && k >= since) cls.push('miss');
+    if (k === today) cls.push('today');
+    if (fut) cls.push('fut');
+    cells += `<button type="button" class="${cls.join(' ')}" data-date="${k}" ${fut ? 'disabled' : ''} aria-label="${d.getDate()}/${d.getMonth()+1}${hist[k] ? ', treino feito' : ''}">${hist[k] ? '✔' : d.getDate()}</button>`;
+  }
+  const month = Object.keys(hist).filter(k => k.startsWith(today.slice(0,7))).length;
+  const late = !doneToday && isTrain && new Date().getHours() >= 20;
+  el.innerHTML = `<div class="tr-top">
+      <div class="stat"><b>${streak()}</b><span>treinos seguidos</span></div>
+      <div class="stat"><b>${month}</b><span>treinos este mês</span></div>
+      <button type="button" id="today-btn" class="today-btn${doneToday ? ' on' : ''}" aria-pressed="${doneToday}">${doneToday ? '✔ Treino de hoje feito' : (isTrain ? 'Marcar treino de hoje como feito' : 'Hoje é descanso · marcar mesmo assim')}</button>
+    </div>
+    ${late ? '<p class="nudge">Ainda não marcou o treino de hoje. Já fez?</p>' : ''}
+    <div class="tr-body">
+      <div class="cal"><div class="wk">S</div><div class="wk">T</div><div class="wk">Q</div><div class="wk">Q</div><div class="wk">S</div><div class="wk">S</div><div class="wk">D</div>${cells}</div>
+      <p class="tr-note">O dia é marcado sozinho quando você conclui todos os exercícios, ou pelo botão. Toque num dia passado para corrigir. Quinta e domingo são descanso e não quebram a sequência.</p>
+    </div>`;
+}
+document.getElementById('tracker').addEventListener('click', e => {
+  const b = e.target.closest('#today-btn, .c'); if (!b || b.disabled) return;
+  const k = b.id === 'today-btn' ? dk(new Date()) : b.dataset.date;
+  if (hist[k]) delete hist[k]; else hist[k] = 1;
+  saveHist(); renderTracker();
+});
+document.addEventListener('visibilitychange', () => { if (!document.hidden) renderTracker(); });
+renderTracker();
+renderDays(); renderMain();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>
