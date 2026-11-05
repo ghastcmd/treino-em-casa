@@ -88,6 +88,7 @@ section.block{display:flex;flex-direction:column;gap:10px}
 .note.stop h3{color:var(--sab)}
 .legend{color:var(--muted);font-size:13px;margin:0}
 .legend b{color:var(--ink)}
+.past{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1.5px dashed var(--accent);border-radius:10px;padding:10px 12px;font-size:13.5px}
 .reset{background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:3px 8px;font:inherit;font-size:12px;cursor:pointer}
 #tracker{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px}
 .tr-top{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
@@ -599,13 +600,25 @@ const io = 'IntersectionObserver' in window ? new IntersectionObserver(es => { f
 
 /* ---------- storage (per-viewer convenience) ---------- */
 const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
-function loadDone(){ try { return JSON.parse(localStorage.getItem('treino-feito-' + todayKey()) || '{}'); } catch(e){ return {}; } }
-function saveDone(o){ try { localStorage.setItem('treino-feito-' + todayKey(), JSON.stringify(o)); } catch(e){} }
-let done = loadDone();
 const dk = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-function loadNotes(){ try { return JSON.parse(localStorage.getItem('treino-notas-' + todayKey()) || '{}'); } catch(e){ return {}; } }
-function saveNotes(){ try { localStorage.setItem('treino-notas-' + todayKey(), JSON.stringify(notes)); } catch(e){} }
+let selDate = todayKey();
+function loadDone(){ try { return JSON.parse(localStorage.getItem('treino-feito-' + selDate) || '{}'); } catch(e){ return {}; } }
+function saveDone(o){ try { localStorage.setItem('treino-feito-' + selDate, JSON.stringify(o)); } catch(e){} }
+let done = loadDone();
+function loadNotes(){ try { return JSON.parse(localStorage.getItem('treino-notas-' + selDate) || '{}'); } catch(e){ return {}; } }
+function saveNotes(){ try { localStorage.setItem('treino-notas-' + selDate, JSON.stringify(notes)); } catch(e){} }
 let notes = loadNotes();
+const wdOf = date => new Date(date + 'T12:00:00').getDay();
+function planFor(date, items){
+  const first = Object.keys(items)[0];
+  if (first){ const pk = first.split(':')[0]; if (DAYS.some(x => x.key === pk)) return pk; }
+  return DAYS.find(x => x.wd === wdOf(date)).key;
+}
+function selectDate(date){
+  selDate = date; done = loadDone(); notes = loadNotes();
+  current = planFor(date, done);
+  renderDays(); renderMain(); renderTracker();
+}
 
 /* ---------- UI ---------- */
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -644,7 +657,10 @@ function renderMain(){
   const d = DAYS.find(x => x.key === current);
   document.documentElement.style.setProperty('--accent', `var(--${d.rest ? 'rest' : d.key})`);
   let total = 0;
+  const isToday = selDate === todayKey();
+  const when = new Date(selDate + 'T12:00:00').toLocaleDateString('pt-BR', {day:'numeric', month:'numeric'});
   let h = `<div class="dayhead"><h2>${esc(d.name)} · ${esc(d.focus)}</h2><p>${esc(d.desc)}</p><span class="prog" id="prog"></span></div>`;
+  if (!isToday) h += `<div class="past"><span>Você está registrando o dia <b>${when}</b>. As marcações e anotações ficam salvas nesse dia.</span><button type="button" class="reset" id="back-today">Voltar para hoje</button></div>`;
   for (const w of d.warm){
     total += w.items.length;
     h += `<section class="block"><div class="blockhead"><h3>Aquecimento · ${esc(w.title)}</h3><span>${esc(w.hint)}</span></div><div class="grid">${w.items.map(it => card(it, d.key, w.title)).join('')}</div></section>`;
@@ -654,7 +670,7 @@ function renderMain(){
     h += `<section class="block"><div class="blockhead"><h3>Treino</h3><span>${d.main.length} exercícios</span></div><div class="grid">${d.main.map(it => card(it, d.key, 'main')).join('')}</div></section>`;
   }
   if (d.rest && !d.warm.length) h += `<div class="rest"><p><b>Hoje é descanso.</b></p><p>O músculo cresce na recuperação. Durma bem e coma proteína suficiente.</p></div>`;
-  if (d.main.length || d.warm.length) h += `<div><button class="reset" type="button" id="reset">Desmarcar tudo de hoje</button></div>`;
+  if (d.main.length || d.warm.length) h += `<div><button class="reset" type="button" id="reset">Desmarcar tudo ${isToday ? 'de hoje' : 'deste dia'}</button></div>`;
   const main = document.getElementById('main');
   if (io) for (const a of anims) io.unobserve(a.el);
   main.innerHTML = h;
@@ -681,6 +697,7 @@ document.getElementById('days').addEventListener('click', e => {
 document.getElementById('main').addEventListener('click', e => {
   const st = e.target.closest('.stage');
   if (st){ const a = st.__anim; a.playing = !a.playing; st.querySelector('.ps').hidden = a.playing; return; }
+  if (e.target.id === 'back-today'){ selectDate(todayKey()); return; }
   if (e.target.id === 'reset'){
     for (const k of Object.keys(done)) if (k.startsWith(current + ':')) delete done[k];
     saveDone(done); renderMain(); renderTracker();
@@ -695,8 +712,8 @@ document.getElementById('main').addEventListener('change', e => {
   saveDone(done); updateProg();
   const cards = [...document.querySelectorAll('#main .card')];
   const d = DAYS.find(x => x.key === current);
-  if (d.wd === new Date().getDay() && d.main.length && cards.length && cards.every(x => x.classList.contains('is-done')) && !hist[dk(new Date())]){
-    hist[dk(new Date())] = 1; saveHist();
+  if (d.main.length && cards.length && cards.every(x => x.classList.contains('is-done')) && !hist[selDate]){
+    hist[selDate] = 1; saveHist();
   }
   renderTracker();
 });
@@ -715,7 +732,6 @@ function loadHist(){ try { return JSON.parse(localStorage.getItem('treino-histor
 function saveHist(){ try { localStorage.setItem('treino-historico', JSON.stringify(hist)); } catch(e){} }
 let hist = loadHist();
 let since = (() => { try { let v = localStorage.getItem('treino-inicio'); if (!v){ v = dk(new Date()); localStorage.setItem('treino-inicio', v); } return v; } catch(e){ return dk(new Date()); } })();
-let sel = dk(new Date());
 function noon(d){ const x = new Date(d); x.setHours(12,0,0,0); return x; }
 function readStore(prefix, date){ try { return JSON.parse(localStorage.getItem(prefix + date) || '{}'); } catch(e){ return {}; } }
 function streak(){
@@ -737,8 +753,8 @@ function findItem(pk, blk, id){
 }
 function logHtml(date){
   const today = dk(new Date());
-  const items = date === today ? done : readStore('treino-feito-', date);
-  const nts = date === today ? notes : readStore('treino-notas-', date);
+  const items = date === selDate ? done : readStore('treino-feito-', date);
+  const nts = date === selDate ? notes : readStore('treino-notas-', date);
   const keys = Object.keys(items);
   const lbl = new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
   const label = lbl.charAt(0).toUpperCase() + lbl.slice(1);
@@ -774,9 +790,9 @@ function renderTracker(){
     else if (!TRAIN_WD.includes(d.getDay())) cls.push('rest');
     else if (!fut && k !== today && k >= since) cls.push('miss');
     if (k === today) cls.push('today');
-    if (k === sel) cls.push('sel');
+    if (k === selDate) cls.push('sel');
     if (fut) cls.push('fut');
-    cells += `<button type="button" class="${cls.join(' ')}" data-date="${k}" ${fut ? 'disabled' : ''} aria-pressed="${k === sel}" aria-label="Ver ${d.getDate()}/${d.getMonth()+1}${hist[k] ? ', treino feito' : ''}">${hist[k] ? '✔' : d.getDate()}</button>`;
+    cells += `<button type="button" class="${cls.join(' ')}" data-date="${k}" ${fut ? 'disabled' : ''} aria-pressed="${k === selDate}" aria-label="Ver ${d.getDate()}/${d.getMonth()+1}${hist[k] ? ', treino feito' : ''}">${hist[k] ? '✔' : d.getDate()}</button>`;
   }
   const month = Object.keys(hist).filter(k => k.startsWith(today.slice(0,7))).length;
   const late = !doneToday && isTrain && new Date().getHours() >= 20;
@@ -789,14 +805,14 @@ function renderTracker(){
     <div class="tr-body">
       <div class="cal-wrap">
         <div class="cal"><div class="wk">S</div><div class="wk">T</div><div class="wk">Q</div><div class="wk">Q</div><div class="wk">S</div><div class="wk">S</div><div class="wk">D</div>${cells}</div>
-        <p class="tr-note">Toque num dia para ver o treino que você fez nele. Quinta e domingo são descanso e não quebram a sequência.</p>
+        <p class="tr-note">Toque num dia para ver e registrar o treino dele. Quinta e domingo são descanso e não quebram a sequência.</p>
       </div>
-      ${logHtml(sel)}
+      ${logHtml(selDate)}
     </div>`;
 }
 document.getElementById('tracker').addEventListener('click', e => {
   const c = e.target.closest('.c');
-  if (c && !c.disabled){ sel = c.dataset.date; renderTracker(); return; }
+  if (c && !c.disabled){ selectDate(c.dataset.date); return; }
   const b = e.target.closest('#today-btn, .day-toggle'); if (!b) return;
   const k = b.id === 'today-btn' ? dk(new Date()) : b.dataset.date;
   if (hist[k]) delete hist[k]; else hist[k] = 1;
