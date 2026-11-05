@@ -92,7 +92,11 @@ section.block{display:flex;flex-direction:column;gap:10px}
 .cardio{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:4px}
 .min-l{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
 .min-in{width:64px;font:inherit;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:4px 6px}
-.presets{display:flex;gap:4px}
+.presets{display:flex;gap:4px;flex-wrap:wrap}
+.stepper{display:flex;align-items:center;gap:4px}
+.step{font:inherit;font-size:13px;font-weight:700;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:4px 9px;cursor:pointer}
+.step:focus-visible{outline:2.5px solid var(--accent);outline-offset:1px}
+.timer-note{margin:0;width:100%;font-size:11.5px;color:var(--muted)}
 .pre{font:inherit;font-size:12px;font-variant-numeric:tabular-nums;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:6px;padding:3px 7px;cursor:pointer}
 .pre.on{border-color:var(--accent);color:var(--ink);font-weight:700}
 .timer-btn{font:inherit;font-size:13px;font-weight:700;border:1.5px solid var(--accent);background:transparent;color:var(--ink);border-radius:8px;padding:5px 10px;cursor:pointer}
@@ -698,6 +702,7 @@ function stageSvg(id){
   const ex = EX[id]; const vb = ex.vb || [0,0,200,132];
   return `<svg viewBox="${vb.join(' ')}" aria-hidden="true">${staticProps(ex)}<g class="fig"></g></svg>`;
 }
+const fmtMin = m => m < 60 ? `${m} min` : `${Math.floor(m/60)}h${m % 60 ? String(m % 60).padStart(2,'0') : ''}`;
 function cardioMin(key){ const v = done[key]; if (v && v.m) return v.m; try { return +localStorage.getItem('treino-cardio-min') || 20; } catch(e){ return 20; } }
 function card(item, dayKey, block, opt){
   let [id, name, dose, cue, link] = item;
@@ -705,7 +710,7 @@ function card(item, dayKey, block, opt){
   const isDone = !!done[key];
   const cardio = LIB[id] && LIB[id].cardio;
   const min = cardio ? cardioMin(key) : 0;
-  if (cardio) dose = `${min} min`;
+  if (cardio) dose = fmtMin(min);
   return `<article class="card${isDone ? ' is-done' : ''}${opt ? ' opt' : ''}" data-key="${esc(key)}"${cardio ? ' data-cardio="1"' : ''}>
     <button class="stage" type="button" data-id="${animOf(id)}" aria-label="Pausar ou continuar a animação de ${esc(name)}">${stageSvg(animOf(id))}<span class="ps" hidden>PAUSADO</span></button>
     <div class="info">
@@ -717,10 +722,11 @@ function card(item, dayKey, block, opt){
         <label class="done"><input type="checkbox" id="chk-${esc(key).replace(/[^a-z0-9]/gi,'-')}" ${isDone ? 'checked' : ''}> Feito</label>
       </div>
       ${cardio ? `<div class="cardio">
-        <label class="min-l">Minutos <input class="min-in" type="number" id="min-${esc(key).replace(/[^a-z0-9]/gi,'-')}" min="5" max="180" step="5" inputmode="numeric" value="${min}"></label>
-        <div class="presets">${[10,20,30,45].map(m => `<button type="button" class="pre${m === min ? ' on' : ''}" data-min="${m}">${m}</button>`).join('')}</div>
+        <div class="stepper"><button type="button" class="step" data-step="-5" aria-label="Menos 5 minutos">−5</button><label class="min-l"><input class="min-in" type="number" id="min-${esc(key).replace(/[^a-z0-9]/gi,'-')}" min="5" max="90" step="5" inputmode="numeric" value="${min}" aria-label="Minutos de cárdio"> min</label><button type="button" class="step" data-step="5" aria-label="Mais 5 minutos">+5</button></div>
+        <div class="presets">${[10,20,30,45,60,90].map(m => `<button type="button" class="pre${m === min ? ' on' : ''}" data-min="${m}">${fmtMin(m)}</button>`).join('')}</div>
         <button type="button" class="timer-btn">${timer && timer.key === key && timer.date === selDate ? 'Parar' : 'Iniciar cronômetro'}</button>
         <span class="timer" aria-live="polite"></span>
+        <p class="timer-note">Deixe o app aberto: a tela fica ligada e o alarme toca no fim.</p>
       </div>` : ''}
       <input class="note-in" type="text" id="note-${esc(key).replace(/[^a-z0-9]/gi,'-')}" maxlength="80" placeholder="Anotação: séries, reps, carga" value="${esc(notes[key] || '')}" aria-label="Anotação de ${esc(name)}">
     </div>
@@ -822,13 +828,16 @@ document.getElementById('main').addEventListener('click', e => {
   const st = e.target.closest('.stage');
   if (st){ const a = st.__anim; a.playing = !a.playing; st.querySelector('.ps').hidden = a.playing; return; }
   if (e.target.id === 'back-today'){ selectDate(todayKey()); return; }
+  const st5 = e.target.closest('.step');
+  if (st5){ const c = st5.closest('.card'); setMinutes(c, (+c.querySelector('.min-in').value || 20) + (+st5.dataset.step)); return; }
   const pre = e.target.closest('.pre');
   if (pre){ setMinutes(pre.closest('.card'), +pre.dataset.min); return; }
   const tb = e.target.closest('.timer-btn');
   if (tb){
     const c = tb.closest('.card'), k = c.dataset.key;
-    if (timer && timer.key === k && timer.date === selDate){ timer = null; saveTimer(); tb.textContent = 'Iniciar cronômetro'; c.querySelector('.timer').textContent = ''; return; }
-    const m = +c.querySelector('.min-in').value || 20;
+    if (timer && timer.key === k && timer.date === selDate){ timer = null; saveTimer(); releaseWake(); tb.textContent = 'Iniciar cronômetro'; c.querySelector('.timer').textContent = ''; return; }
+    const m = Math.max(5, Math.min(90, +c.querySelector('.min-in').value || 20));
+    unlockAudio(); askNotify(); keepAwake();
     timer = {key:k, date:selDate, end:Date.now() + m*60000}; saveTimer();
     document.querySelectorAll('.timer-btn').forEach(b => b.textContent = 'Iniciar cronômetro');
     tb.textContent = 'Parar'; tickTimer();
@@ -842,7 +851,7 @@ document.getElementById('main').addEventListener('click', e => {
 document.getElementById('main').addEventListener('change', e => {
   if (!e.target.matches('.done input')) return;
   const c = e.target.closest('.card'), k = c.dataset.key;
-  if (e.target.checked){ done[k] = {n: c.querySelector('h4').textContent, d: c.querySelector('.dose').textContent}; if (c.dataset.cardio) done[k].m = +c.querySelector('.min-in').value || 20; }
+  if (e.target.checked){ done[k] = {n: c.querySelector('h4').textContent, d: c.querySelector('.dose').textContent}; if (c.dataset.cardio) done[k].m = Math.min(90, +c.querySelector('.min-in').value || 20); }
   else delete done[k];
   c.classList.toggle('is-done', e.target.checked);
   saveDone(done); updateProg();
@@ -866,24 +875,62 @@ document.getElementById('main').addEventListener('input', e => {
 /* ---------- cardio minutes + timer ---------- */
 function setMinutes(c, m, typing){
   if (!m || m < 1) return;
-  m = Math.min(180, Math.round(m));
+  m = Math.max(5, Math.min(90, Math.round(m)));
   const k = c.dataset.key;
   try { localStorage.setItem('treino-cardio-min', String(m)); } catch(e){}
-  c.querySelector('.dose').textContent = `${m} min`;
+  c.querySelector('.dose').textContent = fmtMin(m);
   if (!typing) c.querySelector('.min-in').value = m;
   c.querySelectorAll('.pre').forEach(b => b.classList.toggle('on', +b.dataset.min === m));
-  if (done[k]){ done[k].m = m; done[k].d = `${m} min`; saveDone(done); renderTracker(); }
+  if (done[k]){ done[k].m = m; done[k].d = fmtMin(m); saveDone(done); renderTracker(); }
 }
+/* alarm: sound (Web Audio), vibration and a system notification */
+let actx = null;
+function unlockAudio(){
+  try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume();
+    const o = actx.createOscillator(), g = actx.createGain(); g.gain.value = 0.0001; o.connect(g).connect(actx.destination); o.start(); o.stop(actx.currentTime + 0.05);
+  } catch(e){}
+}
+function playAlarm(){
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.state === 'suspended') actx.resume();
+    const t0 = actx.currentTime + 0.05;
+    for (let r = 0; r < 4; r++) for (let i = 0; i < 3; i++){
+      const t = t0 + r*1.1 + i*0.22, o = actx.createOscillator(), g = actx.createGain();
+      o.type = 'square'; o.frequency.value = i === 2 ? 1320 : 880;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t + 0.2);
+    }
+  } catch(e){}
+}
+function askNotify(){ try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission(); } catch(e){} }
+function notify(title, body){
+  try {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const opts = {body, icon:'icon-192.png', badge:'icon-192.png', tag:'cardio', renotify:true, vibrate:[300,150,300,150,500]};
+    if (navigator.serviceWorker && navigator.serviceWorker.getRegistration){
+      navigator.serviceWorker.getRegistration().then(r => r ? r.showNotification(title, opts) : new Notification(title, opts)).catch(() => {});
+    } else new Notification(title, opts);
+  } catch(e){}
+}
+function alarm(m){
+  playAlarm();
+  try { navigator.vibrate && navigator.vibrate([400,150,400,150,700]); } catch(e){}
+  notify('Cárdio concluído ✔', `${fmtMin(m)} de bike. Bom trabalho!`);
+}
+let wake = null;
+async function keepAwake(){ try { if ('wakeLock' in navigator && !wake){ wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch(e){ wake = null; } }
+function releaseWake(){ try { if (wake) wake.release(); } catch(e){} wake = null; }
+document.addEventListener('visibilitychange', () => { if (!document.hidden && timer) { keepAwake(); tickTimer(); } });
 let timer = (() => { try { const t = JSON.parse(localStorage.getItem('treino-cardio-timer') || 'null'); return t && t.end > Date.now() - 3600000 ? t : null; } catch(e){ return null; } })();
 function saveTimer(){ try { if (timer) localStorage.setItem('treino-cardio-timer', JSON.stringify(timer)); else localStorage.removeItem('treino-cardio-timer'); } catch(e){} }
 function finishTimer(){
-  const t = timer; timer = null; saveTimer();
-  try { navigator.vibrate && navigator.vibrate([300,150,300,150,500]); } catch(e){}
+  const t = timer; timer = null; saveTimer(); releaseWake();
   const store = t.date === selDate ? done : readStore('treino-feito-', t.date);
   const c = document.querySelector(`#main .card[data-key="${t.key}"]`);
   const m = c ? (+c.querySelector('.min-in').value || 20) : 20;
   const it = resolveItem(t.key.split(':')[2]);
-  store[t.key] = {n: it ? it[1] : 'Cárdio', d: `${m} min`, m};
+  store[t.key] = {n: it ? it[1] : 'Cárdio', d: fmtMin(m), m};
+  alarm(m);
   try { localStorage.setItem('treino-feito-' + t.date, JSON.stringify(store)); } catch(e){}
   if (t.date === selDate && c){
     c.classList.add('is-done'); c.querySelector('.done input').checked = true;
