@@ -105,9 +105,27 @@ section.block{display:flex;flex-direction:column;gap:10px}
 .c.miss{border-color:var(--sab);color:var(--sab)}
 .c.rest{border-style:dashed}
 .c.today{box-shadow:0 0 0 2px var(--ink)}
+.c.sel{outline:2.5px solid var(--accent);outline-offset:2px}
+.cal-wrap{display:flex;flex-direction:column;gap:8px;width:100%;max-width:290px}
+.log{flex:1;min-width:min(100%,260px);border-left:3px solid var(--accent);padding-left:12px;display:flex;flex-direction:column;gap:6px}
+.log-head{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+.log-date{display:block;font-size:15px}
+.log-plan{display:block;color:var(--accent);font-weight:700;font-size:13px}
+.log h4{margin:6px 0 0;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.log ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.log li{display:flex;gap:8px;font-size:13.5px;line-height:1.35}
+.log li small{color:var(--muted);font-variant-numeric:tabular-nums}
+.log li em{display:block;font-style:normal;color:var(--ink);background:var(--bg);border-radius:4px;padding:1px 6px;margin-top:2px;font-size:12.5px}
+.lk{color:var(--ter);font-weight:700}
+.log-empty{margin:0;color:var(--muted);font-size:13.5px}
+.day-toggle{font:inherit;font-size:12.5px;font-weight:700;border:1.5px solid var(--ter);background:transparent;color:var(--ink);border-radius:8px;padding:5px 10px;cursor:pointer}
+.day-toggle.on{background:var(--ter);color:#fff}
+.note-in{width:100%;font:inherit;font-size:13px;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:5px 8px;margin-top:4px}
+.note-in::placeholder{color:var(--muted)}
+.note-in:focus-visible,.day-toggle:focus-visible{outline:2.5px solid var(--accent);outline-offset:1px}
 .c.fut{opacity:.35;cursor:default}
 .nudge{margin:0;color:var(--sab);font-weight:700}
-.tr-note{margin:0;color:var(--muted);font-size:12.5px;max-width:360px;flex:1;min-width:200px}
+.tr-note{margin:0;color:var(--muted);font-size:12.5px}
 @media (max-width:520px){ .today-btn{margin-left:0;width:100%} }
 /* svg parts */
 .fg{stroke:var(--fig);fill:none;stroke-linecap:round;stroke-linejoin:round}
@@ -584,6 +602,10 @@ const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${Stri
 function loadDone(){ try { return JSON.parse(localStorage.getItem('treino-feito-' + todayKey()) || '{}'); } catch(e){ return {}; } }
 function saveDone(o){ try { localStorage.setItem('treino-feito-' + todayKey(), JSON.stringify(o)); } catch(e){} }
 let done = loadDone();
+const dk = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function loadNotes(){ try { return JSON.parse(localStorage.getItem('treino-notas-' + todayKey()) || '{}'); } catch(e){ return {}; } }
+function saveNotes(){ try { localStorage.setItem('treino-notas-' + todayKey(), JSON.stringify(notes)); } catch(e){} }
+let notes = loadNotes();
 
 /* ---------- UI ---------- */
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -608,6 +630,7 @@ function card(item, dayKey, block){
         <a class="vid" href="${esc(link)}" target="_blank" rel="noopener">Ver vídeo ↗</a>
         <label class="done"><input type="checkbox" id="chk-${esc(key).replace(/[^a-z0-9]/gi,'-')}" ${isDone ? 'checked' : ''}> Feito</label>
       </div>
+      <input class="note-in" type="text" id="note-${esc(key).replace(/[^a-z0-9]/gi,'-')}" maxlength="80" placeholder="Anotação: séries, reps, carga" value="${esc(notes[key] || '')}" aria-label="Anotação de ${esc(name)}">
     </div>
   </article>`;
 }
@@ -653,92 +676,48 @@ function updateProg(total){
 }
 document.getElementById('days').addEventListener('click', e => {
   const b = e.target.closest('.day'); if (!b) return;
-  current = b.dataset.day; /* ---------- daily tracking ---------- */
-const TRAIN_WD = [1,2,3,5,6];
-const dk = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-function loadHist(){ try { return JSON.parse(localStorage.getItem('treino-historico') || '{}'); } catch(e){ return {}; } }
-function saveHist(){ try { localStorage.setItem('treino-historico', JSON.stringify(hist)); } catch(e){} }
-let hist = loadHist();
-let since = (() => { try { let v = localStorage.getItem('treino-inicio'); if (!v){ v = dk(new Date()); localStorage.setItem('treino-inicio', v); } return v; } catch(e){ return dk(new Date()); } })();
-function noon(d){ const x = new Date(d); x.setHours(12,0,0,0); return x; }
-function streak(){
-  let n = 0; const d = noon(new Date()); const today = dk(d);
-  for (let i = 0; i < 500; i++){
-    const k = dk(d);
-    if (hist[k]) n++;
-    else if (k < since) break;
-    else if (TRAIN_WD.includes(d.getDay()) && k !== today) break;
-    d.setDate(d.getDate()-1);
-  }
-  return n;
-}
-function renderTracker(){
-  const el = document.getElementById('tracker');
-  const now = noon(new Date()), today = dk(now);
-  const isTrain = TRAIN_WD.includes(now.getDay()), doneToday = !!hist[today];
-  const start = new Date(now); start.setDate(now.getDate() - ((now.getDay()+6)%7) - 21);
-  let cells = '';
-  for (let i = 0; i < 28; i++){
-    const d = new Date(start); d.setDate(start.getDate()+i);
-    const k = dk(d), fut = k > today, cls = ['c'];
-    if (hist[k]) cls.push('ok');
-    else if (!TRAIN_WD.includes(d.getDay())) cls.push('rest');
-    else if (!fut && k !== today && k >= since) cls.push('miss');
-    if (k === today) cls.push('today');
-    if (fut) cls.push('fut');
-    cells += `<button type="button" class="${cls.join(' ')}" data-date="${k}" ${fut ? 'disabled' : ''} aria-label="${d.getDate()}/${d.getMonth()+1}${hist[k] ? ', treino feito' : ''}">${hist[k] ? '✔' : d.getDate()}</button>`;
-  }
-  const month = Object.keys(hist).filter(k => k.startsWith(today.slice(0,7))).length;
-  const late = !doneToday && isTrain && new Date().getHours() >= 20;
-  el.innerHTML = `<div class="tr-top">
-      <div class="stat"><b>${streak()}</b><span>treinos seguidos</span></div>
-      <div class="stat"><b>${month}</b><span>treinos este mês</span></div>
-      <button type="button" id="today-btn" class="today-btn${doneToday ? ' on' : ''}" aria-pressed="${doneToday}">${doneToday ? '✔ Treino de hoje feito' : (isTrain ? 'Marcar treino de hoje como feito' : 'Hoje é descanso · marcar mesmo assim')}</button>
-    </div>
-    ${late ? '<p class="nudge">Ainda não marcou o treino de hoje. Já fez?</p>' : ''}
-    <div class="tr-body">
-      <div class="cal"><div class="wk">S</div><div class="wk">T</div><div class="wk">Q</div><div class="wk">Q</div><div class="wk">S</div><div class="wk">S</div><div class="wk">D</div>${cells}</div>
-      <p class="tr-note">O dia é marcado sozinho quando você conclui todos os exercícios, ou pelo botão. Toque num dia passado para corrigir. Quinta e domingo são descanso e não quebram a sequência.</p>
-    </div>`;
-}
-document.getElementById('tracker').addEventListener('click', e => {
-  const b = e.target.closest('#today-btn, .c'); if (!b || b.disabled) return;
-  const k = b.id === 'today-btn' ? dk(new Date()) : b.dataset.date;
-  if (hist[k]) delete hist[k]; else hist[k] = 1;
-  saveHist(); renderTracker();
-});
-document.addEventListener('visibilitychange', () => { if (!document.hidden) renderTracker(); });
-renderTracker();
-renderDays(); renderMain();
+  current = b.dataset.day; renderDays(); renderMain();
 });
 document.getElementById('main').addEventListener('click', e => {
   const st = e.target.closest('.stage');
   if (st){ const a = st.__anim; a.playing = !a.playing; st.querySelector('.ps').hidden = a.playing; return; }
   if (e.target.id === 'reset'){
     for (const k of Object.keys(done)) if (k.startsWith(current + ':')) delete done[k];
-    saveDone(done); renderMain();
+    saveDone(done); renderMain(); renderTracker();
   }
 });
 document.getElementById('main').addEventListener('change', e => {
   if (!e.target.matches('.done input')) return;
   const c = e.target.closest('.card'), k = c.dataset.key;
-  if (e.target.checked) done[k] = 1; else delete done[k];
+  if (e.target.checked) done[k] = {n: c.querySelector('h4').textContent, d: c.querySelector('.dose').textContent};
+  else delete done[k];
   c.classList.toggle('is-done', e.target.checked);
   saveDone(done); updateProg();
   const cards = [...document.querySelectorAll('#main .card')];
   const d = DAYS.find(x => x.key === current);
   if (d.wd === new Date().getDay() && d.main.length && cards.length && cards.every(x => x.classList.contains('is-done')) && !hist[dk(new Date())]){
-    hist[dk(new Date())] = 1; saveHist(); renderTracker();
+    hist[dk(new Date())] = 1; saveHist();
   }
+  renderTracker();
 });
-/* ---------- daily tracking ---------- */
+let noteTimer = 0;
+document.getElementById('main').addEventListener('input', e => {
+  if (!e.target.matches('.note-in')) return;
+  const k = e.target.closest('.card').dataset.key, v = e.target.value.trim();
+  if (v) notes[k] = v; else delete notes[k];
+  saveNotes();
+  clearTimeout(noteTimer); noteTimer = setTimeout(renderTracker, 400);
+});
+
+/* ---------- daily tracking + per-day log ---------- */
 const TRAIN_WD = [1,2,3,5,6];
-const dk = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 function loadHist(){ try { return JSON.parse(localStorage.getItem('treino-historico') || '{}'); } catch(e){ return {}; } }
 function saveHist(){ try { localStorage.setItem('treino-historico', JSON.stringify(hist)); } catch(e){} }
 let hist = loadHist();
 let since = (() => { try { let v = localStorage.getItem('treino-inicio'); if (!v){ v = dk(new Date()); localStorage.setItem('treino-inicio', v); } return v; } catch(e){ return dk(new Date()); } })();
+let sel = dk(new Date());
 function noon(d){ const x = new Date(d); x.setHours(12,0,0,0); return x; }
+function readStore(prefix, date){ try { return JSON.parse(localStorage.getItem(prefix + date) || '{}'); } catch(e){ return {}; } }
 function streak(){
   let n = 0; const d = noon(new Date()); const today = dk(d);
   for (let i = 0; i < 500; i++){
@@ -749,6 +728,38 @@ function streak(){
     d.setDate(d.getDate()-1);
   }
   return n;
+}
+function findItem(pk, blk, id){
+  const pd = DAYS.find(x => x.key === pk); if (!pd) return null;
+  if (blk === 'main') return pd.main.find(it => it[0] === id) || null;
+  const w = pd.warm.find(w => w.title === blk);
+  return w ? (w.items.find(it => it[0] === id) || null) : null;
+}
+function logHtml(date){
+  const today = dk(new Date());
+  const items = date === today ? done : readStore('treino-feito-', date);
+  const nts = date === today ? notes : readStore('treino-notas-', date);
+  const keys = Object.keys(items);
+  const lbl = new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', {weekday:'long', day:'numeric', month:'long'});
+  const label = lbl.charAt(0).toUpperCase() + lbl.slice(1);
+  const plans = [...new Set(keys.map(k => k.split(':')[0]))].map(pk => DAYS.find(x => x.key === pk)).filter(Boolean);
+  const rows = keys.map(k => {
+    const [pk, blk, id] = k.split(':'); const v = items[k];
+    let name = v && v.n, dose = v && v.d;
+    if (!name){ const it = findItem(pk, blk, id); name = it ? it[1] : id; dose = it ? it[2] : ''; }
+    return {blk, name, dose, note: nts[k]};
+  });
+  const li = r => `<li><span class="lk" aria-hidden="true">✔</span><span><b>${esc(r.name)}</b>${r.dose ? ` <small>${esc(r.dose)}</small>` : ''}${r.note ? `<em>${esc(r.note)}</em>` : ''}</span></li>`;
+  const mainR = rows.filter(r => r.blk === 'main'), warmR = rows.filter(r => r.blk !== 'main');
+  let body = '';
+  if (!rows.length) body = `<p class="log-empty">${date === today ? 'Nada registrado ainda hoje. Marque os exercícios como feitos e eles aparecem aqui.' : 'Nenhum exercício registrado neste dia.'}</p>`;
+  if (mainR.length) body += `<h4>Treino · ${mainR.length}</h4><ul>${mainR.map(li).join('')}</ul>`;
+  if (warmR.length) body += `<h4>Aquecimento · ${warmR.length}</h4><ul>${warmR.map(li).join('')}</ul>`;
+  const on = !!hist[date];
+  return `<div class="log">
+    <div class="log-head"><div><b class="log-date">${esc(label)}</b>${plans.length ? `<span class="log-plan">${plans.map(p => esc(p.name + ' · ' + p.focus)).join(' + ')}</span>` : ''}</div>
+    ${date !== today ? `<button type="button" class="day-toggle${on ? ' on' : ''}" data-date="${date}" aria-pressed="${on}">${on ? '✔ Dia feito' : 'Marcar dia como feito'}</button>` : ''}</div>
+    ${body}</div>`;
 }
 function renderTracker(){
   const el = document.getElementById('tracker');
@@ -763,8 +774,9 @@ function renderTracker(){
     else if (!TRAIN_WD.includes(d.getDay())) cls.push('rest');
     else if (!fut && k !== today && k >= since) cls.push('miss');
     if (k === today) cls.push('today');
+    if (k === sel) cls.push('sel');
     if (fut) cls.push('fut');
-    cells += `<button type="button" class="${cls.join(' ')}" data-date="${k}" ${fut ? 'disabled' : ''} aria-label="${d.getDate()}/${d.getMonth()+1}${hist[k] ? ', treino feito' : ''}">${hist[k] ? '✔' : d.getDate()}</button>`;
+    cells += `<button type="button" class="${cls.join(' ')}" data-date="${k}" ${fut ? 'disabled' : ''} aria-pressed="${k === sel}" aria-label="Ver ${d.getDate()}/${d.getMonth()+1}${hist[k] ? ', treino feito' : ''}">${hist[k] ? '✔' : d.getDate()}</button>`;
   }
   const month = Object.keys(hist).filter(k => k.startsWith(today.slice(0,7))).length;
   const late = !doneToday && isTrain && new Date().getHours() >= 20;
@@ -775,12 +787,17 @@ function renderTracker(){
     </div>
     ${late ? '<p class="nudge">Ainda não marcou o treino de hoje. Já fez?</p>' : ''}
     <div class="tr-body">
-      <div class="cal"><div class="wk">S</div><div class="wk">T</div><div class="wk">Q</div><div class="wk">Q</div><div class="wk">S</div><div class="wk">S</div><div class="wk">D</div>${cells}</div>
-      <p class="tr-note">O dia é marcado sozinho quando você conclui todos os exercícios, ou pelo botão. Toque num dia passado para corrigir. Quinta e domingo são descanso e não quebram a sequência.</p>
+      <div class="cal-wrap">
+        <div class="cal"><div class="wk">S</div><div class="wk">T</div><div class="wk">Q</div><div class="wk">Q</div><div class="wk">S</div><div class="wk">S</div><div class="wk">D</div>${cells}</div>
+        <p class="tr-note">Toque num dia para ver o treino que você fez nele. Quinta e domingo são descanso e não quebram a sequência.</p>
+      </div>
+      ${logHtml(sel)}
     </div>`;
 }
 document.getElementById('tracker').addEventListener('click', e => {
-  const b = e.target.closest('#today-btn, .c'); if (!b || b.disabled) return;
+  const c = e.target.closest('.c');
+  if (c && !c.disabled){ sel = c.dataset.date; renderTracker(); return; }
+  const b = e.target.closest('#today-btn, .day-toggle'); if (!b) return;
   const k = b.id === 'today-btn' ? dk(new Date()) : b.dataset.date;
   if (hist[k]) delete hist[k]; else hist[k] = 1;
   saveHist(); renderTracker();
