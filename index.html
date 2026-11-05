@@ -89,6 +89,11 @@ section.block{display:flex;flex-direction:column;gap:10px}
 .legend{color:var(--muted);font-size:13px;margin:0}
 .legend b{color:var(--ink)}
 .past{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1.5px dashed var(--accent);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.used{font-size:12px;color:var(--muted);font-weight:700}
+.used.off{font-weight:400;font-style:italic}
+.lib-tab small{font-variant-numeric:tabular-nums}
+.day.lib-tab[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.day.lib-tab[aria-pressed="true"] small{color:var(--bg);opacity:.85}
 .reset{background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:3px 8px;font:inherit;font-size:12px;cursor:pointer}
 #tracker{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px}
 .tr-top{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
@@ -497,67 +502,100 @@ EX.q_abdside = {...EX.kn_abd, tag:'Deitado de lado', props:[{k:'db',at:'mN',off:
 EX.w_abdband = {...EX.kn_abd, tag:'Deitado de lado', props:[{k:'band',a:'kN',b:'kF'}]};
 
 /* ---------- plan ---------- */
+/* ---------- exercise catalog ----------
+   Every exercise ever used in the app lives here, with its animation (EX[anim || id]).
+   Plans only reference these ids, so a future day builder can pick any of them. */
 const FW = id => `https://fitwill.app/pt-br/exercise/${id}/`;
-const MOB = {title:'Mobilidade', hint:'todos os dias, uns 3 min', items:[
-  ['mob_knee','Joelho na parede (tornozelo)','1 × 10 por lado','Joelho da frente vai em direção à parede; calcanhar no chão.', FW('1969/mobilization-of-ankle-stretch')],
-  ['mob_tspine','Rotação torácica deitado de lado','1 × 8 por lado','Joelhos dobrados; o braço de cima abre para trás.', 'https://fitwill.app/pt/exercise/3539/lying-t-spine-mobility-stretching/'],
-  ['mob_wall','Deslizamento de braços na parede','1 × 10','Costas e braços encostados na parede o tempo todo.', FW('2945/scapular-slide-back-to-wall')],
-]};
-const SHO = {title:'Ombro', hint:'elástico leve ou nenhum', items:[
-  ['sh_er','Rotação externa com elástico','2 × 15','Cotovelos colados ao corpo; só o antebraço gira.', FW('0921/band-standing-external-shoulder-rotation')],
-  ['sh_pa','Abertura com elástico (pull-apart)','2 × 15','Braços esticados; aperte as escápulas no fim.', FW('4568/resistance-band-pull-apart')],
-  ['sh_ytw','Y-T-W deitado de bruços','1 × 8 de cada letra','Sem peso; polegares para cima.', FW('5822/prone-y-raise')],
-  ['sh_scap','Flexão escapular','1 × 10','Braços esticados; só as escápulas se movem. Joelhos fora do chão duro.', 'https://fitwill.app/pt/exercise/4117/kneeling-scapular-push-up/'],
-]};
-const KNE = {title:'Joelho', hint:'elástico leve ou nenhum, 12–15 reps', items:[
-  ['kn_clam','Ostra','2 × 15 por lado','Pés juntos; o quadril não rola para trás.', FW('5780/resistance-band-clam')],
-  ['kn_abd','Abdução deitado de lado','2 × 15 por lado','Perna de cima reta; sobe e desce devagar.', 'https://www.lyfta.app/pt/exercise/abdu%C3%A7%C3%A3o-lateral-do-quadril-6t6'],
-  ['kn_walk','Caminhada lateral com elástico','2 × 10 passos por lado','Passos curtos, só levemente agachado.', FW('6607/resistance-band-lateral-walk')],
-  ['kn_tke','Extensão terminal do joelho (TKE)','2 × 15 por perna','Elástico atrás do joelho; estique até o fim e segure 2 s.', 'https://www.catalystathletics.com/exercise/782/TKE-Terminal-Knee-Extension/'],
-]};
-const DAYS = [
-  {key:'seg', wd:1, short:'Seg', name:'Segunda', focus:'Push', desc:'Peito, ombro e tríceps', warm:[MOB,SHO], main:[
-    ['push_floorpress','Supino no chão com halteres','2 + top set · 6–12','Cotovelos a uns 45° do corpo; o chão limita a descida.', FW('3668/dumbbell-floor-chest-press')],
-    ['push_floorfly','Crucifixo no chão com halteres','2 + top set · 10–15','Cotovelos levemente dobrados; braços param ao tocar o chão.', 'https://musclewiki.com/pt-br/exercise/dumbbell-floor-fly'],
-    ['push_crossover','Crossover unilateral com elástico','2 + top set · 12–20 por braço','Um braço de cada vez, com o mesmo elástico preso no alto da barra fixa. Puxe para baixo e para a frente, até o quadril oposto.', 'https://fitwill.app/pt/exercise/0898/band-high-fly/'],
-    ['push_ohp','Desenvolvimento sentado','1 + top set · 8–12','Pegada neutra: palmas viradas uma para a outra.', FW('0405/dumbbell-seated-shoulder-press')],
-    ['push_pushdown','Tríceps com elástico na barra','2 + top set · 12–20','Cotovelos colados ao corpo.', FW('5268/resistance-band-triceps-pushdown')],
-    ['push_french','Tríceps francês com halter','2 + top set · 10–15','Sentado, halter com as duas mãos atrás da cabeça.', FW('2488/dumbbell-seated-triceps-extension')],
-  ]},
-  {key:'ter', wd:2, short:'Ter', name:'Terça', focus:'Pull', desc:'Costas e bíceps', warm:[MOB,SHO], main:[
-    ['pull_neg','Barra fixa: negativa pronada','2 + top set · 4–8','Suba pelo degrau e desça em 3–5 s.', FW('1763/shoulder-grip-pull-up')],
-    ['pull_row','Remada curvada com halteres','2 + top set · 8–12','Costas retas; puxe em direção ao quadril.', FW('2482/dumbbell-bent-over-row')],
-    ['pull_onearm','Remada unilateral no degrau','2 + top set · 8–12','Apoie o joelho direito no degrau, não o esquerdo.', FW('2393/dumbbell-one-arm-bent-over-row')],
-    ['pull_revfly','Crucifixo invertido','1 + top set · 12–15','Halteres leves; aperte as escápulas no topo.', FW('2487/dumbbell-rear-delt-fly')],
-    ['pull_conc','Rosca concentrada','2 + top set · 10–15','Cotovelo apoiado na parte interna da coxa.', FW('2372/dumbbell-concentration-curl')],
-    ['pull_hammer','Rosca martelo','2 + top set · 10–15','Sem balançar o corpo.', FW('2239/dumbbell-hammer-curl')],
-  ]},
-  {key:'qua', wd:3, short:'Qua', name:'Quarta', focus:'Pernas · quadríceps', desc:'Mais pesado que antes, e ainda o dia mais delicado para o joelho. Se doer, tire primeiro o afundo.', warm:[MOB,KNE], main:[
-    ['q_squat','Agachamento até o degrau','3 + top set · 8–12','Halter no peito. Desça em 3 s, encoste no degrau sem relaxar e suba. Coxa acima do paralelo.', 'https://www.lyfta.app/pt/exercise/agachamento-com-halteres-e-caixa-de-ta%C3%A7a-8xv'],
-    ['q_revlunge','Afundo reverso curto com halteres','2 + top set · 8–12 por perna','Passo para trás; a canela da frente fica quase vertical. Desça só até onde não dói.', 'https://fitwill.app/pt/exercise/2219/dumbbell-rear-lunge/'],
-    ['q_slidecurl','Flexora deslizante com toalha','2 + top set · 8–12','Chão liso. Quadril elevado; os calcanhares deslizam para a frente e voltam puxando.', FW('3742/sliding-leg-curl-on-floor-with-towel')],
-    ['q_wallsit','Isometria na parede com halteres','3 séries · 30–45 s','Halteres sobre as coxas; joelhos dobrados só uns 45°.', FW('1558/dumbbell-wall-squat')],
-    ['q_abdside','Abdução deitado com halter','2 + top set · 12–15 por lado','Halter apoiado na lateral da coxa de cima; perna reta, sobe e desce devagar.', FW('0837/weighted-lying-hip-abduction')],
-    ['q_calf','Panturrilha unilateral no degrau','3 + top set · 10–15','Halter na mão. Pausa de 2 s embaixo e em cima.', FW('5003/standing-single-leg-calf-raise-on-a-staircase')],
-  ]},
-  {key:'qui', wd:4, short:'Qui', name:'Quinta', focus:'Descanso', rest:true, desc:'Dia livre. Se o joelho estiver sem dor, faça o bloco de joelho leve.', warm:[KNE], main:[]},
-  {key:'sex', wd:5, short:'Sex', name:'Sexta', focus:'Upper', desc:'Tronco completo', warm:[MOB,SHO], main:[
-    ['x_declpush','Flexão com os pés no degrau','2 + top set · 6–15','Não saiu 6? Faça a flexão normal. Cotovelos a uns 45°.', FW('0280/decline-push-up')],
-    ['push_floorfly','Crucifixo no chão com halteres','2 + top set · 10–15','Cotovelos levemente dobrados; desça em 3 s e pare quando os braços tocarem o chão.', 'https://musclewiki.com/pt-br/exercise/dumbbell-floor-fly'],
-    ['pull_neg','Barra fixa: negativa supinada','2 + top set · 4–8','Palmas viradas para você; desça em 3–5 s.', FW('4725/chin-up-izometric-and-negative')],
-    ['x_lat','Elevação lateral','1 + top set · 12–15','Suba até a linha do ombro, não acima.', 'https://fitwill.app/pt/exercise/0334/dumbbell-lateral-raise/'],
-    ['x_skull','Tríceps testa no chão','2 + top set · 10–15','Cotovelos apontando para cima, sem abrir.', FW('2738/dumbbell-lying-triceps-extension-on-floor')],
-    ['x_altcurl','Rosca alternada com halteres','2 + top set · 10–15 por braço','Gire a palma para cima enquanto sobe; desça em 3 s, sem balançar o corpo.', FW('2584/dumbbell-alternate-biceps-curl')],
-  ]},
-  {key:'sab', wd:6, short:'Sáb', name:'Sábado', focus:'Pernas · posterior', desc:'Glúteos e posterior de coxa', warm:[MOB,KNE], main:[
-    ['w_rdl','Stiff com halteres','2 + top set · 8–12','Joelhos levemente dobrados, quadril para trás, costas retas.', FW('2222/dumbbell-romanian-deadlift')],
-    ['w_hipthrust','Elevação pélvica no degrau','2 + top set · 8–15','Costas no degrau, halter no quadril; pausa de 1 s no topo.', FW('2754/weighted-hip-thrusts')],
-    ['w_hambridge','Ponte de posterior','2 + top set · 10–15','Calcanhares no degrau, joelhos quase esticados.', 'https://fitwill.app/pt/exercise/2472/glute-bridge-two-legs-on-bench/'],
-    ['w_abdband','Abdução deitado com elástico','2 + top set · 15–20','Elástico acima dos joelhos; perna de cima reta.', 'https://www.lyfta.app/pt/exercise/abdu%C3%A7%C3%A3o-lateral-do-quadril-6t6'],
-    ['w_calfseat','Panturrilha sentado no degrau','2 + top set · 15–20','Halter sobre as coxas, perto do quadril, nunca na patela.', FW('1379/dumbbell-seated-calf-raise')],
-  ]},
-  {key:'dom', wd:0, short:'Dom', name:'Domingo', focus:'Descanso', rest:true, desc:'Descanso completo. Uma caminhada leve é bem-vinda.', warm:[], main:[]},
-];
+const LYFTA_ABD = 'https://www.lyfta.app/pt/exercise/abdu%C3%A7%C3%A3o-lateral-do-quadril-6t6';
+const GROUPS = ['Mobilidade','Estabilidade de ombro','Estabilidade de joelho','Peito','Ombros','Tríceps','Costas','Bíceps','Pernas · quadríceps','Pernas · posterior','Glúteos','Panturrilha'];
+const LIB = {
+  mob_knee:{name:'Joelho na parede (tornozelo)', dose:'1 × 10 por lado', cue:'Joelho da frente vai em direção à parede; calcanhar no chão.', link:FW('1969/mobilization-of-ankle-stretch'), group:'Mobilidade', equip:'Peso do corpo'},
+  mob_tspine:{name:'Rotação torácica deitado de lado', dose:'1 × 8 por lado', cue:'Joelhos dobrados; o braço de cima abre para trás.', link:'https://fitwill.app/pt/exercise/3539/lying-t-spine-mobility-stretching/', group:'Mobilidade', equip:'Peso do corpo'},
+  mob_wall:{name:'Deslizamento de braços na parede', dose:'1 × 10', cue:'Costas e braços encostados na parede o tempo todo.', link:FW('2945/scapular-slide-back-to-wall'), group:'Mobilidade', equip:'Parede'},
+  sh_er:{name:'Rotação externa com elástico', dose:'2 × 15', cue:'Cotovelos colados ao corpo; só o antebraço gira.', link:FW('0921/band-standing-external-shoulder-rotation'), group:'Estabilidade de ombro', equip:'Elástico leve'},
+  sh_pa:{name:'Abertura com elástico (pull-apart)', dose:'2 × 15', cue:'Braços esticados; aperte as escápulas no fim.', link:FW('4568/resistance-band-pull-apart'), group:'Estabilidade de ombro', equip:'Elástico leve'},
+  sh_ytw:{name:'Y-T-W deitado de bruços', dose:'1 × 8 de cada letra', cue:'Sem peso; polegares para cima.', link:FW('5822/prone-y-raise'), group:'Estabilidade de ombro', equip:'Peso do corpo'},
+  sh_scap:{name:'Flexão escapular', dose:'1 × 10', cue:'Braços esticados; só as escápulas se movem. Joelhos fora do chão duro.', link:'https://fitwill.app/pt/exercise/4117/kneeling-scapular-push-up/', group:'Estabilidade de ombro', equip:'Peso do corpo'},
+  kn_clam:{name:'Ostra', dose:'2 × 15 por lado', cue:'Pés juntos; o quadril não rola para trás.', link:FW('5780/resistance-band-clam'), group:'Estabilidade de joelho', equip:'Peso do corpo'},
+  kn_abd:{name:'Abdução deitado de lado', dose:'2 × 15 por lado', cue:'Perna de cima reta; sobe e desce devagar.', link:LYFTA_ABD, group:'Estabilidade de joelho', equip:'Peso do corpo'},
+  kn_walk:{name:'Caminhada lateral com elástico', dose:'2 × 10 passos por lado', cue:'Passos curtos, só levemente agachado.', link:FW('6607/resistance-band-lateral-walk'), group:'Estabilidade de joelho', equip:'Elástico leve'},
+  kn_tke:{name:'Extensão terminal do joelho (TKE)', dose:'2 × 15 por perna', cue:'Elástico atrás do joelho; estique até o fim e segure 2 s.', link:'https://www.catalystathletics.com/exercise/782/TKE-Terminal-Knee-Extension/', group:'Estabilidade de joelho', equip:'Elástico'},
+  push_floorpress:{name:'Supino no chão com halteres', dose:'2 + top set · 6–12', cue:'Cotovelos a uns 45° do corpo; o chão limita a descida.', link:FW('3668/dumbbell-floor-chest-press'), group:'Peito', equip:'Halteres'},
+  push_floorfly:{name:'Crucifixo no chão com halteres', dose:'2 + top set · 10–15', cue:'Cotovelos levemente dobrados; braços param ao tocar o chão.', link:'https://musclewiki.com/pt-br/exercise/dumbbell-floor-fly', group:'Peito', equip:'Halteres'},
+  push_crossover:{name:'Crossover unilateral com elástico', dose:'2 + top set · 12–20 por braço', cue:'Um braço de cada vez, com o mesmo elástico preso no alto da barra fixa. Puxe para baixo e para a frente, até o quadril oposto.', link:'https://fitwill.app/pt/exercise/0898/band-high-fly/', group:'Peito', equip:'Elástico + barra fixa'},
+  x_lowfly:{name:'Crucifixo unilateral com elástico (de baixo para cima)', dose:'2 + top set · 12–20 por braço', cue:'Um braço de cada vez, com o elástico preso embaixo. A mão sobe até a frente do queixo.', link:FW('0908/band-low-fly'), group:'Peito', equip:'Elástico'},
+  x_declpush:{name:'Flexão com os pés no degrau', dose:'2 + top set · 6–15', cue:'Não saiu 6? Faça a flexão normal. Cotovelos a uns 45°.', link:FW('0280/decline-push-up'), group:'Peito', equip:'Degrau'},
+  push_ohp:{name:'Desenvolvimento sentado', dose:'1 + top set · 8–12', cue:'Pegada neutra: palmas viradas uma para a outra.', link:FW('0405/dumbbell-seated-shoulder-press'), group:'Ombros', equip:'Halteres + degrau'},
+  x_lat:{name:'Elevação lateral', dose:'1 + top set · 12–15', cue:'Suba até a linha do ombro, não acima.', link:'https://fitwill.app/pt/exercise/0334/dumbbell-lateral-raise/', group:'Ombros', equip:'Halteres'},
+  push_pushdown:{name:'Tríceps com elástico na barra', dose:'2 + top set · 12–20', cue:'Cotovelos colados ao corpo.', link:FW('5268/resistance-band-triceps-pushdown'), group:'Tríceps', equip:'Elástico + barra fixa'},
+  push_french:{name:'Tríceps francês com halter', dose:'2 + top set · 10–15', cue:'Sentado, halter com as duas mãos atrás da cabeça.', link:FW('2488/dumbbell-seated-triceps-extension'), group:'Tríceps', equip:'Halter + degrau'},
+  x_skull:{name:'Tríceps testa no chão', dose:'2 + top set · 10–15', cue:'Cotovelos apontando para cima, sem abrir.', link:FW('2738/dumbbell-lying-triceps-extension-on-floor'), group:'Tríceps', equip:'Halteres'},
+  pull_neg:{name:'Barra fixa: negativa pronada', dose:'2 + top set · 4–8', cue:'Suba pelo degrau e desça em 3–5 s.', link:FW('1763/shoulder-grip-pull-up'), group:'Costas', equip:'Barra fixa'},
+  chin_neg:{name:'Barra fixa: negativa supinada', dose:'2 + top set · 4–8', cue:'Palmas viradas para você; desça em 3–5 s.', link:FW('4725/chin-up-izometric-and-negative'), group:'Costas', equip:'Barra fixa', anim:'pull_neg'},
+  pull_row:{name:'Remada curvada com halteres', dose:'2 + top set · 8–12', cue:'Costas retas; puxe em direção ao quadril.', link:FW('2482/dumbbell-bent-over-row'), group:'Costas', equip:'Halteres'},
+  pull_onearm:{name:'Remada unilateral no degrau', dose:'2 + top set · 8–12', cue:'Apoie o joelho direito no degrau, não o esquerdo.', link:FW('2393/dumbbell-one-arm-bent-over-row'), group:'Costas', equip:'Halter + degrau'},
+  pull_revfly:{name:'Crucifixo invertido', dose:'1 + top set · 12–15', cue:'Halteres leves; aperte as escápulas no topo.', link:FW('2487/dumbbell-rear-delt-fly'), group:'Costas', equip:'Halteres'},
+  pull_conc:{name:'Rosca concentrada', dose:'2 + top set · 10–15', cue:'Cotovelo apoiado na parte interna da coxa.', link:FW('2372/dumbbell-concentration-curl'), group:'Bíceps', equip:'Halter + degrau'},
+  pull_hammer:{name:'Rosca martelo', dose:'2 + top set · 10–15', cue:'Sem balançar o corpo.', link:FW('2239/dumbbell-hammer-curl'), group:'Bíceps', equip:'Halteres'},
+  x_altcurl:{name:'Rosca alternada com halteres', dose:'2 + top set · 10–15 por braço', cue:'Gire a palma para cima enquanto sobe; desça em 3 s, sem balançar o corpo.', link:FW('2584/dumbbell-alternate-biceps-curl'), group:'Bíceps', equip:'Halteres'},
+  x_bandcurl:{name:'Rosca com elástico', dose:'2 + top set · 12–20', cue:'Elástico preso embaixo e atrás; braço um pouco atrás do corpo.', link:FW('4086/band-standard-biceps-curl'), group:'Bíceps', equip:'Elástico'},
+  q_squat:{name:'Agachamento até o degrau', dose:'3 + top set · 8–12', cue:'Halter no peito. Desça em 3 s, encoste no degrau sem relaxar e suba. Coxa acima do paralelo.', link:'https://www.lyfta.app/pt/exercise/agachamento-com-halteres-e-caixa-de-ta%C3%A7a-8xv', group:'Pernas · quadríceps', equip:'Halter + degrau'},
+  q_revlunge:{name:'Afundo reverso curto com halteres', dose:'2 + top set · 8–12 por perna', cue:'Passo para trás; a canela da frente fica quase vertical. Desça só até onde não dói.', link:'https://fitwill.app/pt/exercise/2219/dumbbell-rear-lunge/', group:'Pernas · quadríceps', equip:'Halteres'},
+  q_wallsit:{name:'Isometria na parede com halteres', dose:'3 séries · 30–45 s', cue:'Halteres sobre as coxas; joelhos dobrados só uns 45°.', link:FW('1558/dumbbell-wall-squat'), group:'Pernas · quadríceps', equip:'Halteres + parede'},
+  q_slidecurl:{name:'Flexora deslizante com toalha', dose:'2 + top set · 8–12', cue:'Chão liso. Quadril elevado; os calcanhares deslizam para a frente e voltam puxando.', link:FW('3742/sliding-leg-curl-on-floor-with-towel'), group:'Pernas · posterior', equip:'Toalha'},
+  q_curl:{name:'Flexora com elástico', dose:'2 + top set · 12–20', cue:'Deitado de bruços, elástico preso no tornozelo.', link:FW('0911/band-lying-leg-curl'), group:'Pernas · posterior', equip:'Elástico'},
+  w_rdl:{name:'Stiff com halteres', dose:'2 + top set · 8–12', cue:'Joelhos levemente dobrados, quadril para trás, costas retas.', link:FW('2222/dumbbell-romanian-deadlift'), group:'Pernas · posterior', equip:'Halteres'},
+  w_hambridge:{name:'Ponte de posterior', dose:'2 + top set · 10–15', cue:'Calcanhares no degrau, joelhos quase esticados.', link:'https://fitwill.app/pt/exercise/2472/glute-bridge-two-legs-on-bench/', group:'Pernas · posterior', equip:'Degrau'},
+  w_hipthrust:{name:'Elevação pélvica no degrau', dose:'2 + top set · 8–15', cue:'Costas no degrau, halter no quadril; pausa de 1 s no topo.', link:FW('2754/weighted-hip-thrusts'), group:'Glúteos', equip:'Halter + degrau'},
+  q_abdside:{name:'Abdução deitado com halter', dose:'2 + top set · 12–15 por lado', cue:'Halter apoiado na lateral da coxa de cima; perna reta, sobe e desce devagar.', link:FW('0837/weighted-lying-hip-abduction'), group:'Glúteos', equip:'Halter'},
+  w_abdband:{name:'Abdução deitado com elástico', dose:'2 + top set · 15–20', cue:'Elástico acima dos joelhos; perna de cima reta.', link:LYFTA_ABD, group:'Glúteos', equip:'Elástico'},
+  q_abdstand:{name:'Abdução em pé com elástico', dose:'2 + top set · 15–20', cue:'Elástico nos tornozelos; a perna vai para o lado sem inclinar o tronco.', link:FW('0899/band-hip-abduction'), group:'Glúteos', equip:'Elástico + parede'},
+  q_calf:{name:'Panturrilha unilateral no degrau', dose:'3 + top set · 10–15', cue:'Halter na mão. Pausa de 2 s embaixo e em cima.', link:FW('5003/standing-single-leg-calf-raise-on-a-staircase'), group:'Panturrilha', equip:'Halter + degrau'},
+  w_calfseat:{name:'Panturrilha sentado no degrau', dose:'2 + top set · 15–20', cue:'Halter sobre as coxas, perto do quadril, nunca na patela.', link:FW('1379/dumbbell-seated-calf-raise'), group:'Panturrilha', equip:'Halter + degrau'},
+};
+
+/* ---------- plan (data only) ----------
+   A plan is plain JSON: blocks of warm-ups and days that reference LIB ids.
+   An item is an id, or {id, dose?, cue?, name?} to override the catalog for that day.
+   A future day builder only has to edit this object and call savePlan(). */
+const DEFAULT_PLAN = {version:1,
+  blocks:{
+    MOB:{title:'Mobilidade', hint:'todos os dias, uns 3 min', items:['mob_knee','mob_tspine','mob_wall']},
+    SHO:{title:'Ombro', hint:'elástico leve ou nenhum', items:['sh_er','sh_pa','sh_ytw','sh_scap']},
+    KNE:{title:'Joelho', hint:'elástico leve ou nenhum, 12–15 reps', items:['kn_clam','kn_abd','kn_walk','kn_tke']},
+  },
+  days:[
+    {key:'seg', wd:1, short:'Seg', name:'Segunda', focus:'Push', desc:'Peito, ombro e tríceps', warm:['MOB','SHO'],
+      main:['push_floorpress','push_floorfly','push_crossover','push_ohp','push_pushdown','push_french']},
+    {key:'ter', wd:2, short:'Ter', name:'Terça', focus:'Pull', desc:'Costas e bíceps', warm:['MOB','SHO'],
+      main:['pull_neg','pull_row','pull_onearm','pull_revfly','pull_conc','pull_hammer']},
+    {key:'qua', wd:3, short:'Qua', name:'Quarta', focus:'Pernas · quadríceps', desc:'Mais pesado que antes, e ainda o dia mais delicado para o joelho. Se doer, tire primeiro o afundo.', warm:['MOB','KNE'],
+      main:['q_squat','q_revlunge','q_slidecurl','q_wallsit','q_abdside','q_calf']},
+    {key:'qui', wd:4, short:'Qui', name:'Quinta', focus:'Descanso', rest:true, desc:'Dia livre. Se o joelho estiver sem dor, faça o bloco de joelho leve.', warm:['KNE'], main:[]},
+    {key:'sex', wd:5, short:'Sex', name:'Sexta', focus:'Upper', desc:'Tronco completo', warm:['MOB','SHO'],
+      main:['x_declpush', {id:'push_floorfly', cue:'Cotovelos levemente dobrados; desça em 3 s e pare quando os braços tocarem o chão.'}, 'chin_neg','x_lat','x_skull','x_altcurl']},
+    {key:'sab', wd:6, short:'Sáb', name:'Sábado', focus:'Pernas · posterior', desc:'Glúteos e posterior de coxa', warm:['MOB','KNE'],
+      main:['w_rdl','w_hipthrust','w_hambridge','w_abdband','w_calfseat']},
+    {key:'dom', wd:0, short:'Dom', name:'Domingo', focus:'Descanso', rest:true, desc:'Descanso completo. Uma caminhada leve é bem-vinda.', warm:[], main:[]},
+  ]};
+const PLAN_KEY = 'treino-plano';
+function validPlan(p){ return p && p.version === 1 && Array.isArray(p.days) && p.days.length === 7 && p.blocks && typeof p.blocks === 'object'; }
+function loadPlan(){ try { const p = JSON.parse(localStorage.getItem(PLAN_KEY) || 'null'); if (validPlan(p)) return p; } catch(e){} return DEFAULT_PLAN; }
+function savePlan(p){ if (!validPlan(p)) return false; try { localStorage.setItem(PLAN_KEY, JSON.stringify(p)); return true; } catch(e){ return false; } }
+/* resolve a plan item into the [id, name, dose, cue, link] row the UI renders */
+function resolveItem(ref){
+  const r = typeof ref === 'string' ? {id:ref} : ref;
+  const e = LIB[r.id]; if (!e) return null;
+  return [r.id, r.name || e.name, r.dose || e.dose, r.cue || e.cue, e.link];
+}
+const animOf = id => (LIB[id] && LIB[id].anim) || id;
+function buildDays(plan){
+  return plan.days.map(d => ({...d,
+    warm:(d.warm || []).map(b => plan.blocks[b]).filter(Boolean).map(b => ({...b, items:b.items.map(resolveItem).filter(Boolean)})),
+    main:(d.main || []).map(resolveItem).filter(Boolean)}));
+}
+let PLAN = loadPlan();
+const DAYS = buildDays(PLAN);
 
 /* ---------- animation engine ---------- */
 class Anim {
@@ -634,10 +672,10 @@ function card(item, dayKey, block){
   const key = `${dayKey}:${block}:${id}`;
   const isDone = !!done[key];
   return `<article class="card${isDone ? ' is-done' : ''}" data-key="${esc(key)}">
-    <button class="stage" type="button" data-id="${id}" aria-label="Pausar ou continuar a animação de ${esc(name)}">${stageSvg(id)}<span class="ps" hidden>PAUSADO</span></button>
+    <button class="stage" type="button" data-id="${animOf(id)}" aria-label="Pausar ou continuar a animação de ${esc(name)}">${stageSvg(animOf(id))}<span class="ps" hidden>PAUSADO</span></button>
     <div class="info">
       <h4>${esc(name)}</h4>
-      <span class="dose">${esc(dose)}</span>${EX[id].tag ? `<span class="tag">${esc(EX[id].tag)}</span>` : ''}
+      <span class="dose">${esc(dose)}</span>${EX[animOf(id)].tag ? `<span class="tag">${esc(EX[animOf(id)].tag)}</span>` : ''}
       <p class="cue">${esc(cue)}</p>
       <div class="row">
         <a class="vid" href="${esc(link)}" target="_blank" rel="noopener">Ver vídeo ↗</a>
@@ -651,9 +689,50 @@ function renderDays(){
   const nav = document.getElementById('days');
   nav.innerHTML = DAYS.filter(d => d.wd !== 0).concat(DAYS.filter(d => d.wd === 0)).map(d =>
     `<button class="day" type="button" style="--dc:var(--${d.rest ? 'rest' : d.key})" aria-pressed="${d.key === current}" data-day="${d.key}">${d.short}<small>${esc(d.focus)}${d.wd === todayWd ? ' · <b>hoje</b>' : ''}</small></button>`
-  ).join('');
+  ).join('') + `<button class="day lib-tab" type="button" style="--dc:var(--ink)" aria-pressed="${current === 'lib'}" data-day="lib">Biblioteca<small>${Object.keys(LIB).length} exercícios</small></button>`;
+}
+function usedIn(id){
+  return DAYS.filter(d => d.main.some(it => it[0] === id) || d.warm.some(w => w.items.some(it => it[0] === id))).map(d => d.short);
+}
+function libCard(id){
+  const e = LIB[id], used = usedIn(id), a = animOf(id);
+  return `<article class="card lib-card">
+    <button class="stage" type="button" data-id="${a}" aria-label="Pausar ou continuar a animação de ${esc(e.name)}">${stageSvg(a)}<span class="ps" hidden>PAUSADO</span></button>
+    <div class="info">
+      <h4>${esc(e.name)}</h4>
+      <span class="dose">${esc(e.dose)}</span>
+      <span class="tag">${esc(e.equip)}</span>
+      <p class="cue">${esc(e.cue)}</p>
+      <div class="row">
+        <a class="vid" href="${esc(e.link)}" target="_blank" rel="noopener">Ver vídeo ↗</a>
+        <span class="used${used.length ? '' : ' off'}">${used.length ? 'No plano: ' + used.join(', ') : 'Fora do plano atual'}</span>
+      </div>
+    </div>
+  </article>`;
+}
+function renderLibrary(){
+  document.documentElement.style.setProperty('--accent', 'var(--ink)');
+  const ids = Object.keys(LIB);
+  let h = `<div class="dayhead"><h2>Biblioteca</h2><p>Todos os exercícios do app, inclusive os que já saíram do plano.</p><span class="prog">${ids.length} exercícios</span></div>`;
+  for (const g of GROUPS){
+    const gi = ids.filter(id => LIB[id].group === g); if (!gi.length) continue;
+    h += `<section class="block"><div class="blockhead"><h3>${esc(g)}</h3><span>${gi.length}</span></div><div class="grid">${gi.map(libCard).join('')}</div></section>`;
+  }
+  return h;
+}
+function mountAnims(main){
+  if (io) for (const a of anims) io.unobserve(a.el);
+  anims = [];
+  main.querySelectorAll('.stage').forEach(btn => {
+    const a = new Anim(btn.querySelector('svg'), btn.dataset.id);
+    a.el = btn; btn.__anim = a;
+    btn.querySelector('.ps').hidden = a.playing;
+    anims.push(a);
+    if (io) io.observe(btn); else a.visible = true;
+  });
 }
 function renderMain(){
+  if (current === 'lib'){ const main = document.getElementById('main'); main.innerHTML = renderLibrary(); mountAnims(main); return; }
   const d = DAYS.find(x => x.key === current);
   document.documentElement.style.setProperty('--accent', `var(--${d.rest ? 'rest' : d.key})`);
   let total = 0;
@@ -762,7 +841,7 @@ function logHtml(date){
   const rows = keys.map(k => {
     const [pk, blk, id] = k.split(':'); const v = items[k];
     let name = v && v.n, dose = v && v.d;
-    if (!name){ const it = findItem(pk, blk, id); name = it ? it[1] : id; dose = it ? it[2] : ''; }
+    if (!name){ const it = findItem(pk, blk, id) || resolveItem(id); name = it ? it[1] : id; dose = it ? it[2] : ''; }
     return {blk, name, dose, note: nts[k]};
   });
   const li = r => `<li><span class="lk" aria-hidden="true">✔</span><span><b>${esc(r.name)}</b>${r.dose ? ` <small>${esc(r.dose)}</small>` : ''}${r.note ? `<em>${esc(r.note)}</em>` : ''}</span></li>`;
