@@ -22,12 +22,15 @@ Tudo fica em `index.html`, em três camadas independentes:
   blocks: { MOB: { title, hint, items: ['mob_knee', ...] }, ... },
   days: [
     { key: 'seg', wd: 1, short: 'Seg', name: 'Segunda', focus: 'Push', desc: '...',
-      warm: ['MOB', 'SHO'],                 // ids de blocos
+      warm: ['MOB', 'SHO'],                 // blocos antes do treino
+      extra: ['CAR'],                       // blocos depois do treino (ex.: cárdio opcional)
       main: ['push_floorpress', {id: 'push_floorfly', cue: '...'}] }, // id ou override
     ...
   ]
 }
 ```
+
+Blocos com `optional: true` não contam para o progresso nem para concluir o dia. Exercícios com `cardio: true` no catálogo ganham escolha de minutos e cronômetro.
 
 Um item pode ser só o id ou `{id, name?, dose?, cue?}` para sobrescrever o catálogo naquele dia.
 
@@ -46,3 +49,5 @@ Um item pode ser só o id ou `{id, name?, dose?, cue?}` para sobrescrever o cat�
 | `treino-historico` | Dias concluídos: `{ "AAAA-MM-DD": 1 }` |
 | `treino-inicio` | Primeiro dia de uso (dias anteriores não contam como falta) |
 | `treino-plano` | Plano personalizado (opcional) |
+| `treino-cardio-min` | Últimos minutos escolhidos para o cárdio |
+| `treino-cardio-timer` | Cronômetro em andamento (continua se o app for fechado) |

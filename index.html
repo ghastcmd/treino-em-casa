@@ -89,6 +89,15 @@ section.block{display:flex;flex-direction:column;gap:10px}
 .legend{color:var(--muted);font-size:13px;margin:0}
 .legend b{color:var(--ink)}
 .past{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1.5px dashed var(--accent);border-radius:10px;padding:10px 12px;font-size:13.5px}
+.cardio{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:4px}
+.min-l{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.min-in{width:64px;font:inherit;font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:4px 6px}
+.presets{display:flex;gap:4px}
+.pre{font:inherit;font-size:12px;font-variant-numeric:tabular-nums;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:6px;padding:3px 7px;cursor:pointer}
+.pre.on{border-color:var(--accent);color:var(--ink);font-weight:700}
+.timer-btn{font:inherit;font-size:13px;font-weight:700;border:1.5px solid var(--accent);background:transparent;color:var(--ink);border-radius:8px;padding:5px 10px;cursor:pointer}
+.timer{font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;color:var(--accent)}
+.min-in:focus-visible,.pre:focus-visible,.timer-btn:focus-visible{outline:2.5px solid var(--accent);outline-offset:1px}
 .used{font-size:12px;color:var(--muted);font-weight:700}
 .used.off{font-weight:400;font-style:italic}
 .lib-tab small{font-variant-numeric:tabular-nums}
@@ -142,6 +151,7 @@ section.block{display:flex;flex-direction:column;gap:10px}
 .mt{fill:var(--mat)}
 .bd{stroke:var(--band);stroke-width:2.2;fill:none;stroke-linecap:round}
 .ir{fill:var(--iron)}
+.rg{fill:none;stroke:var(--iron);stroke-width:2.6}
 .irs{stroke:var(--iron);stroke-width:2.4;stroke-linecap:round}
 .lb{fill:var(--muted);font:700 9px var(--f-body);letter-spacing:.06em}
 @media (max-width:520px){
@@ -276,6 +286,8 @@ function staticProps(ex){
     if (p.k === 'wall') s += `<rect x="${p.x}" y="${vb[1]}" width="${p.w||8}" height="${FLOOR-vb[1]}" class="pr"/>`;
     if (p.k === 'bar') s += `<line x1="${p.x1}" y1="${p.y}" x2="${p.x2}" y2="${p.y}" class="irs" stroke-width="3"/>` +
         `<line x1="${p.x1}" y1="${p.y}" x2="${p.x1}" y2="${vb[1]}" class="fl"/><line x1="${p.x2}" y1="${p.y}" x2="${p.x2}" y2="${vb[1]}" class="fl"/>`;
+    if (p.k === 'ring') s += `<circle cx="${p.x}" cy="${p.y}" r="${p.r}" class="rg"/>`;
+    if (p.k === 'seg') s += `<line x1="${p.x1}" y1="${p.y1}" x2="${p.x2}" y2="${p.y2}" class="irs" stroke-width="${p.w || 2.6}"/>`;
     if (p.k === 'post') s += `<rect x="${p.x-2.5}" y="${p.y}" width="5" height="${FLOOR-p.y}" rx="1.5" class="pr"/>`;
     if (p.k === 'label') s += `<text x="${vb[0]+vb[2]-8}" y="${vb[1]+14}" text-anchor="end" class="lb">${p.text}</text>`;
   }
@@ -498,6 +510,22 @@ const EX = {
     {p:[94,92.5], t:-90, aN:{ik:'kN',off:[-8,-7],b:1}, aF:{ik:'kF',off:[-8,-7],b:1}, lN:{ik:[124.2,112.6],b:-1,f:50}, lF:{ik:[120.2,112.6],b:-1,f:50}, $h:.4, $d:1},
   ]},
 };
+
+/* stationary bike: crank at (112,98), r 11; feet follow the pedals */
+EX.cardio_bike = (() => {
+  const cx = 112, cy = 98, r = 11, frames = [];
+  for (let i = 0; i < 8; i++){
+    const a = i*45, b = a+180;
+    frames.push({p:[86,62], t:-58, hd:-70, aN:{ik:[136,47],b:1}, aF:{ik:[134,48],b:1},
+      lN:{ik:[cx+r*Math.cos(a*D2R), cy+r*Math.sin(a*D2R)], b:-1, f:8},
+      lF:{ik:[cx+r*Math.cos(b*D2R), cy+r*Math.sin(b*D2R)], b:-1, f:8}, $h:0, $d:.16});
+  }
+  return {view:'side', lin:true, props:[
+    {k:'ring',x:62,y:101,r:20},{k:'ring',x:160,y:101,r:20},
+    {k:'seg',x1:62,y1:101,x2:112,y2:98},{k:'seg',x1:112,y1:98,x2:84,y2:66},{k:'seg',x1:62,y1:101,x2:86,y2:70},
+    {k:'seg',x1:86,y1:70,x2:130,y2:58},{k:'seg',x1:112,y1:98,x2:130,y2:58},{k:'seg',x1:130,y1:58,x2:160,y2:101},
+    {k:'seg',x1:130,y1:58,x2:136,y2:46},{k:'seg',x1:78,y1:65,x2:92,y2:65,w:4},{k:'ring',x:112,y:98,r:4}], frames};
+})();
 EX.q_abdside = {...EX.kn_abd, tag:'Deitado de lado', props:[{k:'db',at:'mN',off:[0,-4.5],o:0}]};
 EX.w_abdband = {...EX.kn_abd, tag:'Deitado de lado', props:[{k:'band',a:'kN',b:'kF'}]};
 
@@ -507,7 +535,7 @@ EX.w_abdband = {...EX.kn_abd, tag:'Deitado de lado', props:[{k:'band',a:'kN',b:'
    Plans only reference these ids, so a future day builder can pick any of them. */
 const FW = id => `https://fitwill.app/pt-br/exercise/${id}/`;
 const LYFTA_ABD = 'https://www.lyfta.app/pt/exercise/abdu%C3%A7%C3%A3o-lateral-do-quadril-6t6';
-const GROUPS = ['Mobilidade','Estabilidade de ombro','Estabilidade de joelho','Peito','Ombros','Tríceps','Costas','Bíceps','Pernas · quadríceps','Pernas · posterior','Glúteos','Panturrilha'];
+const GROUPS = ['Cárdio','Mobilidade','Estabilidade de ombro','Estabilidade de joelho','Peito','Ombros','Tríceps','Costas','Bíceps','Pernas · quadríceps','Pernas · posterior','Glúteos','Panturrilha'];
 const LIB = {
   mob_knee:{name:'Joelho na parede (tornozelo)', dose:'1 × 10 por lado', cue:'Joelho da frente vai em direção à parede; calcanhar no chão.', link:FW('1969/mobilization-of-ankle-stretch'), group:'Mobilidade', equip:'Peso do corpo'},
   mob_tspine:{name:'Rotação torácica deitado de lado', dose:'1 × 8 por lado', cue:'Joelhos dobrados; o braço de cima abre para trás.', link:'https://fitwill.app/pt/exercise/3539/lying-t-spine-mobility-stretching/', group:'Mobilidade', equip:'Peso do corpo'},
@@ -551,6 +579,7 @@ const LIB = {
   w_abdband:{name:'Abdução deitado com elástico', dose:'2 + top set · 15–20', cue:'Elástico acima dos joelhos; perna de cima reta.', link:LYFTA_ABD, group:'Glúteos', equip:'Elástico'},
   q_abdstand:{name:'Abdução em pé com elástico', dose:'2 + top set · 15–20', cue:'Elástico nos tornozelos; a perna vai para o lado sem inclinar o tronco.', link:FW('0899/band-hip-abduction'), group:'Glúteos', equip:'Elástico + parede'},
   q_calf:{name:'Panturrilha unilateral no degrau', dose:'3 + top set · 10–15', cue:'Halter na mão. Pausa de 2 s embaixo e em cima.', link:FW('5003/standing-single-leg-calf-raise-on-a-staircase'), group:'Panturrilha', equip:'Halter + degrau'},
+  cardio_bike:{name:'Bicicleta (cárdio leve)', dose:'20 min', cue:'Ritmo em que dá para conversar, marcha leve. Banco alto: com o pedal embaixo, o joelho fica quase esticado.', link:FW('0798/stationary-bike-walk'), group:'Cárdio', equip:'Bicicleta', cardio:true},
   w_calfseat:{name:'Panturrilha sentado no degrau', dose:'2 + top set · 15–20', cue:'Halter sobre as coxas, perto do quadril, nunca na patela.', link:FW('1379/dumbbell-seated-calf-raise'), group:'Panturrilha', equip:'Halter + degrau'},
 };
 
@@ -563,20 +592,21 @@ const DEFAULT_PLAN = {version:1,
     MOB:{title:'Mobilidade', hint:'todos os dias, uns 3 min', items:['mob_knee','mob_tspine','mob_wall']},
     SHO:{title:'Ombro', hint:'elástico leve ou nenhum', items:['sh_er','sh_pa','sh_ytw','sh_scap']},
     KNE:{title:'Joelho', hint:'elástico leve ou nenhum, 12–15 reps', items:['kn_clam','kn_abd','kn_walk','kn_tke']},
+    CAR:{title:'Cárdio', hint:'opcional · escolha os minutos', optional:true, items:['cardio_bike']},
   },
   days:[
-    {key:'seg', wd:1, short:'Seg', name:'Segunda', focus:'Push', desc:'Peito, ombro e tríceps', warm:['MOB','SHO'],
+    {key:'seg', wd:1, short:'Seg', name:'Segunda', focus:'Push', extra:['CAR'], desc:'Peito, ombro e tríceps', warm:['MOB','SHO'],
       main:['push_floorpress','push_floorfly','push_crossover','push_ohp','push_pushdown','push_french']},
-    {key:'ter', wd:2, short:'Ter', name:'Terça', focus:'Pull', desc:'Costas e bíceps', warm:['MOB','SHO'],
+    {key:'ter', wd:2, short:'Ter', name:'Terça', focus:'Pull', extra:['CAR'], desc:'Costas e bíceps', warm:['MOB','SHO'],
       main:['pull_neg','pull_row','pull_onearm','pull_revfly','pull_conc','pull_hammer']},
-    {key:'qua', wd:3, short:'Qua', name:'Quarta', focus:'Pernas · quadríceps', desc:'Mais pesado que antes, e ainda o dia mais delicado para o joelho. Se doer, tire primeiro o afundo.', warm:['MOB','KNE'],
+    {key:'qua', wd:3, short:'Qua', name:'Quarta', focus:'Pernas · quadríceps', extra:['CAR'], desc:'Mais pesado que antes, e ainda o dia mais delicado para o joelho. Se doer, tire primeiro o afundo.', warm:['MOB','KNE'],
       main:['q_squat','q_revlunge','q_slidecurl','q_wallsit','q_abdside','q_calf']},
-    {key:'qui', wd:4, short:'Qui', name:'Quinta', focus:'Descanso', rest:true, desc:'Dia livre. Se o joelho estiver sem dor, faça o bloco de joelho leve.', warm:['KNE'], main:[]},
-    {key:'sex', wd:5, short:'Sex', name:'Sexta', focus:'Upper', desc:'Tronco completo', warm:['MOB','SHO'],
+    {key:'qui', wd:4, short:'Qui', name:'Quinta', focus:'Descanso', rest:true, extra:['CAR'], desc:'Dia livre. Se o joelho estiver sem dor, faça o bloco de joelho leve.', warm:['KNE'], main:[]},
+    {key:'sex', wd:5, short:'Sex', name:'Sexta', focus:'Upper', extra:['CAR'], desc:'Tronco completo', warm:['MOB','SHO'],
       main:['x_declpush', {id:'push_floorfly', cue:'Cotovelos levemente dobrados; desça em 3 s e pare quando os braços tocarem o chão.'}, 'chin_neg','x_lat','x_skull','x_altcurl']},
-    {key:'sab', wd:6, short:'Sáb', name:'Sábado', focus:'Pernas · posterior', desc:'Glúteos e posterior de coxa', warm:['MOB','KNE'],
+    {key:'sab', wd:6, short:'Sáb', name:'Sábado', focus:'Pernas · posterior', extra:['CAR'], desc:'Glúteos e posterior de coxa', warm:['MOB','KNE'],
       main:['w_rdl','w_hipthrust','w_hambridge','w_abdband','w_calfseat']},
-    {key:'dom', wd:0, short:'Dom', name:'Domingo', focus:'Descanso', rest:true, desc:'Descanso completo. Uma caminhada leve é bem-vinda.', warm:[], main:[]},
+    {key:'dom', wd:0, short:'Dom', name:'Domingo', focus:'Descanso', rest:true, extra:['CAR'], desc:'Descanso completo. Uma caminhada leve é bem-vinda.', warm:[], main:[]},
   ]};
 const PLAN_KEY = 'treino-plano';
 function validPlan(p){ return p && p.version === 1 && Array.isArray(p.days) && p.days.length === 7 && p.blocks && typeof p.blocks === 'object'; }
@@ -592,6 +622,7 @@ const animOf = id => (LIB[id] && LIB[id].anim) || id;
 function buildDays(plan){
   return plan.days.map(d => ({...d,
     warm:(d.warm || []).map(b => plan.blocks[b]).filter(Boolean).map(b => ({...b, items:b.items.map(resolveItem).filter(Boolean)})),
+    extra:(d.extra || []).map(b => plan.blocks[b]).filter(Boolean).map(b => ({...b, items:b.items.map(resolveItem).filter(Boolean)})),
     main:(d.main || []).map(resolveItem).filter(Boolean)}));
 }
 let PLAN = loadPlan();
@@ -618,7 +649,7 @@ class Anim {
     for (const s of this.steps){
       if (t < s.h) return s.a;
       t -= s.h;
-      if (t < s.d){ const u = t/s.d; return lerp(s.a, s.b, u*u*(3-2*u)); }
+      if (t < s.d){ const u = t/s.d; return lerp(s.a, s.b, this.ex.lin ? u : u*u*(3-2*u)); }
       t -= s.d;
     }
     return this.steps[0].a;
@@ -667,11 +698,15 @@ function stageSvg(id){
   const ex = EX[id]; const vb = ex.vb || [0,0,200,132];
   return `<svg viewBox="${vb.join(' ')}" aria-hidden="true">${staticProps(ex)}<g class="fig"></g></svg>`;
 }
-function card(item, dayKey, block){
-  const [id, name, dose, cue, link] = item;
+function cardioMin(key){ const v = done[key]; if (v && v.m) return v.m; try { return +localStorage.getItem('treino-cardio-min') || 20; } catch(e){ return 20; } }
+function card(item, dayKey, block, opt){
+  let [id, name, dose, cue, link] = item;
   const key = `${dayKey}:${block}:${id}`;
   const isDone = !!done[key];
-  return `<article class="card${isDone ? ' is-done' : ''}" data-key="${esc(key)}">
+  const cardio = LIB[id] && LIB[id].cardio;
+  const min = cardio ? cardioMin(key) : 0;
+  if (cardio) dose = `${min} min`;
+  return `<article class="card${isDone ? ' is-done' : ''}${opt ? ' opt' : ''}" data-key="${esc(key)}"${cardio ? ' data-cardio="1"' : ''}>
     <button class="stage" type="button" data-id="${animOf(id)}" aria-label="Pausar ou continuar a animação de ${esc(name)}">${stageSvg(animOf(id))}<span class="ps" hidden>PAUSADO</span></button>
     <div class="info">
       <h4>${esc(name)}</h4>
@@ -681,6 +716,12 @@ function card(item, dayKey, block){
         <a class="vid" href="${esc(link)}" target="_blank" rel="noopener">Ver vídeo ↗</a>
         <label class="done"><input type="checkbox" id="chk-${esc(key).replace(/[^a-z0-9]/gi,'-')}" ${isDone ? 'checked' : ''}> Feito</label>
       </div>
+      ${cardio ? `<div class="cardio">
+        <label class="min-l">Minutos <input class="min-in" type="number" id="min-${esc(key).replace(/[^a-z0-9]/gi,'-')}" min="5" max="180" step="5" inputmode="numeric" value="${min}"></label>
+        <div class="presets">${[10,20,30,45].map(m => `<button type="button" class="pre${m === min ? ' on' : ''}" data-min="${m}">${m}</button>`).join('')}</div>
+        <button type="button" class="timer-btn">${timer && timer.key === key && timer.date === selDate ? 'Parar' : 'Iniciar cronômetro'}</button>
+        <span class="timer" aria-live="polite"></span>
+      </div>` : ''}
       <input class="note-in" type="text" id="note-${esc(key).replace(/[^a-z0-9]/gi,'-')}" maxlength="80" placeholder="Anotação: séries, reps, carga" value="${esc(notes[key] || '')}" aria-label="Anotação de ${esc(name)}">
     </div>
   </article>`;
@@ -749,7 +790,10 @@ function renderMain(){
     h += `<section class="block"><div class="blockhead"><h3>Treino</h3><span>${d.main.length} exercícios</span></div><div class="grid">${d.main.map(it => card(it, d.key, 'main')).join('')}</div></section>`;
   }
   if (d.rest && !d.warm.length) h += `<div class="rest"><p><b>Hoje é descanso.</b></p><p>O músculo cresce na recuperação. Durma bem e coma proteína suficiente.</p></div>`;
-  if (d.main.length || d.warm.length) h += `<div><button class="reset" type="button" id="reset">Desmarcar tudo ${isToday ? 'de hoje' : 'deste dia'}</button></div>`;
+  for (const w of d.extra || []){
+    h += `<section class="block"><div class="blockhead"><h3>${esc(w.title)}</h3><span>${esc(w.hint)}</span></div><div class="grid">${w.items.map(it => card(it, d.key, w.title, w.optional)).join('')}</div></section>`;
+  }
+  if (d.main.length || d.warm.length || (d.extra || []).length) h += `<div><button class="reset" type="button" id="reset">Desmarcar tudo ${isToday ? 'de hoje' : 'deste dia'}</button></div>`;
   const main = document.getElementById('main');
   if (io) for (const a of anims) io.unobserve(a.el);
   main.innerHTML = h;
@@ -762,9 +806,10 @@ function renderMain(){
     if (io) io.observe(btn); else a.visible = true;
   });
   updateProg(total);
+  tickTimer();
 }
 function updateProg(total){
-  const cards = document.querySelectorAll('#main .card');
+  const cards = document.querySelectorAll('#main .card:not(.opt)');
   const n = [...cards].filter(c => c.classList.contains('is-done')).length;
   const p = document.getElementById('prog');
   if (p) p.textContent = cards.length ? `${n} de ${cards.length} feitos` : '';
@@ -777,6 +822,18 @@ document.getElementById('main').addEventListener('click', e => {
   const st = e.target.closest('.stage');
   if (st){ const a = st.__anim; a.playing = !a.playing; st.querySelector('.ps').hidden = a.playing; return; }
   if (e.target.id === 'back-today'){ selectDate(todayKey()); return; }
+  const pre = e.target.closest('.pre');
+  if (pre){ setMinutes(pre.closest('.card'), +pre.dataset.min); return; }
+  const tb = e.target.closest('.timer-btn');
+  if (tb){
+    const c = tb.closest('.card'), k = c.dataset.key;
+    if (timer && timer.key === k && timer.date === selDate){ timer = null; saveTimer(); tb.textContent = 'Iniciar cronômetro'; c.querySelector('.timer').textContent = ''; return; }
+    const m = +c.querySelector('.min-in').value || 20;
+    timer = {key:k, date:selDate, end:Date.now() + m*60000}; saveTimer();
+    document.querySelectorAll('.timer-btn').forEach(b => b.textContent = 'Iniciar cronômetro');
+    tb.textContent = 'Parar'; tickTimer();
+    return;
+  }
   if (e.target.id === 'reset'){
     for (const k of Object.keys(done)) if (k.startsWith(current + ':')) delete done[k];
     saveDone(done); renderMain(); renderTracker();
@@ -785,11 +842,11 @@ document.getElementById('main').addEventListener('click', e => {
 document.getElementById('main').addEventListener('change', e => {
   if (!e.target.matches('.done input')) return;
   const c = e.target.closest('.card'), k = c.dataset.key;
-  if (e.target.checked) done[k] = {n: c.querySelector('h4').textContent, d: c.querySelector('.dose').textContent};
+  if (e.target.checked){ done[k] = {n: c.querySelector('h4').textContent, d: c.querySelector('.dose').textContent}; if (c.dataset.cardio) done[k].m = +c.querySelector('.min-in').value || 20; }
   else delete done[k];
   c.classList.toggle('is-done', e.target.checked);
   saveDone(done); updateProg();
-  const cards = [...document.querySelectorAll('#main .card')];
+  const cards = [...document.querySelectorAll('#main .card:not(.opt)')];
   const d = DAYS.find(x => x.key === current);
   if (d.main.length && cards.length && cards.every(x => x.classList.contains('is-done')) && !hist[selDate]){
     hist[selDate] = 1; saveHist();
@@ -798,12 +855,52 @@ document.getElementById('main').addEventListener('change', e => {
 });
 let noteTimer = 0;
 document.getElementById('main').addEventListener('input', e => {
+  if (e.target.matches('.min-in')){ setMinutes(e.target.closest('.card'), +e.target.value, true); return; }
   if (!e.target.matches('.note-in')) return;
   const k = e.target.closest('.card').dataset.key, v = e.target.value.trim();
   if (v) notes[k] = v; else delete notes[k];
   saveNotes();
   clearTimeout(noteTimer); noteTimer = setTimeout(renderTracker, 400);
 });
+
+/* ---------- cardio minutes + timer ---------- */
+function setMinutes(c, m, typing){
+  if (!m || m < 1) return;
+  m = Math.min(180, Math.round(m));
+  const k = c.dataset.key;
+  try { localStorage.setItem('treino-cardio-min', String(m)); } catch(e){}
+  c.querySelector('.dose').textContent = `${m} min`;
+  if (!typing) c.querySelector('.min-in').value = m;
+  c.querySelectorAll('.pre').forEach(b => b.classList.toggle('on', +b.dataset.min === m));
+  if (done[k]){ done[k].m = m; done[k].d = `${m} min`; saveDone(done); renderTracker(); }
+}
+let timer = (() => { try { const t = JSON.parse(localStorage.getItem('treino-cardio-timer') || 'null'); return t && t.end > Date.now() - 3600000 ? t : null; } catch(e){ return null; } })();
+function saveTimer(){ try { if (timer) localStorage.setItem('treino-cardio-timer', JSON.stringify(timer)); else localStorage.removeItem('treino-cardio-timer'); } catch(e){} }
+function finishTimer(){
+  const t = timer; timer = null; saveTimer();
+  try { navigator.vibrate && navigator.vibrate([300,150,300,150,500]); } catch(e){}
+  const store = t.date === selDate ? done : readStore('treino-feito-', t.date);
+  const c = document.querySelector(`#main .card[data-key="${t.key}"]`);
+  const m = c ? (+c.querySelector('.min-in').value || 20) : 20;
+  const it = resolveItem(t.key.split(':')[2]);
+  store[t.key] = {n: it ? it[1] : 'Cárdio', d: `${m} min`, m};
+  try { localStorage.setItem('treino-feito-' + t.date, JSON.stringify(store)); } catch(e){}
+  if (t.date === selDate && c){
+    c.classList.add('is-done'); c.querySelector('.done input').checked = true;
+    c.querySelector('.timer-btn').textContent = 'Iniciar cronômetro';
+    c.querySelector('.timer').textContent = 'Concluído ✔';
+    updateProg();
+  }
+  renderTracker();
+}
+function tickTimer(){
+  if (!timer) return;
+  const left = timer.end - Date.now();
+  if (left <= 0){ finishTimer(); return; }
+  const c = timer.date === selDate ? document.querySelector(`#main .card[data-key="${timer.key}"] .timer`) : null;
+  if (c){ const s = Math.ceil(left/1000); c.textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')} restantes`; }
+}
+setInterval(tickTimer, 1000);
 
 /* ---------- daily tracking + per-day log ---------- */
 const TRAIN_WD = [1,2,3,5,6];
@@ -845,10 +942,11 @@ function logHtml(date){
     return {blk, name, dose, note: nts[k]};
   });
   const li = r => `<li><span class="lk" aria-hidden="true">✔</span><span><b>${esc(r.name)}</b>${r.dose ? ` <small>${esc(r.dose)}</small>` : ''}${r.note ? `<em>${esc(r.note)}</em>` : ''}</span></li>`;
-  const mainR = rows.filter(r => r.blk === 'main'), warmR = rows.filter(r => r.blk !== 'main');
+  const mainR = rows.filter(r => r.blk === 'main'), carR = rows.filter(r => r.blk === 'Cárdio'), warmR = rows.filter(r => r.blk !== 'main' && r.blk !== 'Cárdio');
   let body = '';
   if (!rows.length) body = `<p class="log-empty">${date === today ? 'Nada registrado ainda hoje. Marque os exercícios como feitos e eles aparecem aqui.' : 'Nenhum exercício registrado neste dia.'}</p>`;
   if (mainR.length) body += `<h4>Treino · ${mainR.length}</h4><ul>${mainR.map(li).join('')}</ul>`;
+  if (carR.length) body += `<h4>Cárdio</h4><ul>${carR.map(li).join('')}</ul>`;
   if (warmR.length) body += `<h4>Aquecimento · ${warmR.length}</h4><ul>${warmR.map(li).join('')}</ul>`;
   const on = !!hist[date];
   return `<div class="log">
